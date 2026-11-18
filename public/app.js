@@ -158,9 +158,15 @@ function renderTradingViewChart(symbol, timeframe) {
 }
 
 // --- WebSocket Realtime Connection ---
-function connectWebSocket() {
-  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//${location.host}/ws?roomId=${currentRoomId}`;
+async function connectWebSocket() {
+  let wsUrl;
+  try {
+    const { resolveWsUrl } = await import('/js/ws-url.js');
+    wsUrl = await resolveWsUrl(`/ws?roomId=${currentRoomId}`);
+  } catch {
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    wsUrl = `${protocol}//${location.host}/ws?roomId=${currentRoomId}`;
+  }
   
   ws = new WebSocket(wsUrl);
 

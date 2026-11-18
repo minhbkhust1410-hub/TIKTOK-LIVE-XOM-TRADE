@@ -1,15 +1,20 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import mod from 'node-edge-tts';
 
 const EdgeTTS = mod.EdgeTTS || mod.default;
 
-// Voices directory & cache setup
+// Voices directory & cache setup (respects TILITA_DATA_DIR / DATA_DIR with /tmp fallback for containers)
 const rootDir = process.cwd();
-const cacheDir = path.join(rootDir, 'data', 'tts-cache');
-if (!fs.existsSync(cacheDir)) {
-  fs.mkdirSync(cacheDir, { recursive: true });
+const baseDataDir = process.env.TILITA_DATA_DIR || process.env.DATA_DIR || path.join(rootDir, 'data');
+let cacheDir = path.join(baseDataDir, 'tts-cache');
+try {
+  if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+} catch {
+  cacheDir = path.join(os.tmpdir(), 'xom-trade-tts-cache');
+  if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
 }
 
 export const VOICES = {

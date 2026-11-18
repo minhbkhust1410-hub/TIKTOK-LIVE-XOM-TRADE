@@ -52,3 +52,68 @@ test('HTTP/WS integration: preview isolation, primary acknowledgement, config an
     const interrupted = await waitFor(s => !s.renderer); assert.equal(interrupted.current, null); assert.equal(interrupted.history[0].status, 'interrupted');
   } finally { preview?.terminate(); screen?.terminate(); await app.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('Cloud Run + Firebase Hosting proxy headers and /api/app-info wsOrigin contract', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tilita-cloud-'));
+  const prevService = process.env.K_SERVICE;
+  const prevWsOrigin = process.env.PUBLIC_WS_ORIGIN;
+  process.env.K_SERVICE = 'xom-trade-live';
+  process.env.PUBLIC_WS_ORIGIN = 'wss://xom-trade-live-abc.a.run.app';
+  const app = createApp({ dataDir: dir });
+  app.server.listen(0, '127.0.0.1');
+  await once(app.server, 'listening');
+  const url = `http://127.0.0.1:${app.server.address().port}`;
+  try {
+    const infoRes = await fetch(url + '/api/app-info', {
+      headers: {
+        'X-Forwarded-Host': 'xom-trade-demo.web.app',
+        Origin: 'https://xom-trade-demo.web.app'
+      }
+    });
+    assert.equal(infoRes.status, 200);
+    const info = await infoRes.json();
+    assert.equal(info.wsOrigin, 'wss://xom-trade-live-abc.a.run.app');
+
+    // Cross-origin from unapproved third-party sites remains blocked
+    const blocked = await fetch(url + '/api/app-info', {
+      headers: {
+        'X-Forwarded-Host': 'xom-trade-live-abc.a.run.app',
+        Origin: 'https://evil.example'
+      }
+    });
+    assert.equal(blocked.status, 403);
+  } finally {
+    if (prevService === undefined) delete process.env.K_SERVICE; else process.env.K_SERVICE = prevService;
+    if (prevWsOrigin === undefined) delete process.env.PUBLIC_WS_ORIGIN; else process.env.PUBLIC_WS_ORIGIN = prevWsOrigin;
+    await app.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('Render free runtime proxy headers and automatic wss wsOrigin resolution', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tilita-render-'));
+  const prevRender = process.env.RENDER;
+  const prevRenderHost = process.env.RENDER_EXTERNAL_HOSTNAME;
+  process.env.RENDER = 'true';
+  process.env.RENDER_EXTERNAL_HOSTNAME = 'xom-trade-live.onrender.com';
+  const app = createApp({ dataDir: dir });
+  app.server.listen(0, '127.0.0.1');
+  await once(app.server, 'listening');
+  const url = `http://127.0.0.1:${app.server.address().port}`;
+  try {
+    const res = await fetch(url + '/api/app-info', {
+      headers: {
+        'X-Forwarded-Host': 'xom-trade-live.onrender.com',
+        Origin: 'https://xom-trade-live.onrender.com'
+      }
+    });
+    assert.equal(res.status, 200);
+    const info = await res.json();
+    assert.equal(info.wsOrigin, 'wss://xom-trade-live.onrender.com');
+  } finally {
+    if (prevRender === undefined) delete process.env.RENDER; else process.env.RENDER = prevRender;
+    if (prevRenderHost === undefined) delete process.env.RENDER_EXTERNAL_HOSTNAME; else process.env.RENDER_EXTERNAL_HOSTNAME = prevRenderHost;
+    await app.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

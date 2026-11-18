@@ -277,7 +277,7 @@ test('Vietnamese Voice Engine: 7. Stop & Aborted Audio Do Not Trigger Browser Fa
     const liveTestHtml = fs.readFileSync(path.join(rootDir, 'public', 'live-test.html'), 'utf8');
     assert.ok(overlayJs.includes('isPrimary() && !embeddedMuted'), 'Overlay voice Proxy must gate on isPrimary() && !embeddedMuted');
     assert.ok(overlayJs.includes('shouldSpeakCelebration'), 'Overlay must deduplicate social celebration TTS');
-    assert.ok(overlayHtml.includes('overlay.js?v=hang-rong-v7.5'), 'overlay.html must bump overlay.js cache buster');
+    assert.ok(overlayHtml.includes('overlay.js?v=hang-rong-v7.6'), 'overlay.html must bump overlay.js cache buster');
     assert.ok(liveTestHtml.includes("type: 'set-embedded-preview', muted: true"), 'live-test.html must mute embedded overlay preview');
 
     // Tiered gift appreciation and non-rose "Hoa Sen" gift name preservation

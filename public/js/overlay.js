@@ -7,6 +7,7 @@ import { renderRitualBoard } from './ritual-board.js?v=hang-rong-v2.0';
 import { createNarration } from './narration.js?v=hang-rong-v2.0';
 import { musicURL } from './music-files.js?v=hang-rong-v2.0';
 import { createVoiceEngine } from './voice-engine.js?v=voice-queue-v3.6';
+import { resolveWsUrl } from './ws-url.js';
 
 const $ = id => document.getElementById(id);
 const preview = location.pathname === '/preview';
@@ -1973,9 +1974,9 @@ requestAnimationFrame(frame);
 // ============================================================================
 // WebSocket Connection & Realtime Event Synchronization
 // ============================================================================
-function connect() {
-  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${protocol}//${location.host}/ws?role=${preview ? 'preview' : 'overlay'}`);
+async function connect() {
+  const wsUrl = await resolveWsUrl(`/ws?role=${preview ? 'preview' : 'overlay'}`);
+  ws = new WebSocket(wsUrl);
 
   ws.onmessage = async e => {
     try {

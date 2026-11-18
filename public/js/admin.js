@@ -1,4 +1,5 @@
 import { RUNTIME_REVISION } from './experience.js?v=wooden-v2.7';
+import { resolveWsUrl } from './ws-url.js';
 const $ = id => document.getElementById(id);
 const escape = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const num = n => Number(n || 0).toLocaleString('vi-VN');
@@ -249,8 +250,8 @@ function renderAdminTug(tug) {
   }
 }
 
-function connect() {
-  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws?role=admin`);
+async function connect() {
+  const ws = new WebSocket(await resolveWsUrl('/ws?role=admin'));
   ws.onopen = () => { $('serverState').textContent = 'Đã kết nối tool'; };
   ws.onmessage = e => {
     try {

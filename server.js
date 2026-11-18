@@ -79,7 +79,7 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
     engine.showHallDemo();
   }
   const viralEngine = new ViralEngine();
-  const app = express(); const server = http.createServer(app); const wss = new WebSocketServer({ noServer: true, maxPayload: 16384 });
+  const app = express(); app.set('trust proxy', 1); const server = http.createServer(app); const wss = new WebSocketServer({ noServer: true, maxPayload: 16384 });
   const clients = new Map(); let source;
   // XAU/USD quote deliberately follows the same TradingView OANDA:XAUUSD feed as
   // the displayed chart, so the large header quote does not drift from it.
@@ -376,6 +376,8 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
   const remoteOverlayHost = 'overlay-remote.local';
   const isPrivateIp = host => /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.)/.test(host);
   const isTunnelHost = host => /(\.serveousercontent\.com|\.loca\.lt|\.lhr\.life|\.ngrok-free\.app|\.trycloudflare\.com)$/i.test(host);
+  const isCloudRuntime = Boolean(process.env.K_SERVICE || process.env.CLOUD_RUN_JOB || process.env.RENDER);
+  const isCloudHost = host => /\.(?:web\.app|firebaseapp\.com|hosted\.app|a\.run\.app|run\.app|onrender\.com)$/i.test(host);
   const getDirectHost = req => (req.headers.host || '').split(':')[0].toLowerCase();
   const getReqHost = req => (req.headers['x-forwarded-host'] || req.headers.host || '').split(':')[0].toLowerCase();
   const isRemoteOverlayRequest = req => getDirectHost(req) === remoteOverlayHost;
@@ -386,7 +388,12 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
   };
   const validHost = req => {
     const host = getReqHost(req);
-    return ['127.0.0.1', 'localhost', remoteOverlayHost].includes(host) || isPrivateIp(host) || isTunnelHost(host) || customAllowed.includes(host) || customAllowed.includes('*');
+    return ['127.0.0.1', 'localhost', remoteOverlayHost].includes(host)
+      || isPrivateIp(host)
+      || isTunnelHost(host)
+      || (isCloudRuntime && isCloudHost(host))
+      || customAllowed.includes(host)
+      || customAllowed.includes('*');
   };
   const validOrigin = req => {
     if (!req.headers.origin) return true;
@@ -397,6 +404,7 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
       if (originHost === reqHost) return true;
       if (['127.0.0.1', 'localhost'].includes(originHost) && ['127.0.0.1', 'localhost'].includes(reqHost)) return true;
       if (isTunnelHost(originHost) && (isTunnelHost(reqHost) || ['127.0.0.1', 'localhost'].includes(reqHost) || isRemoteOverlayRequest(req))) return true;
+      if (isCloudRuntime && isCloudHost(originHost) && (isCloudHost(reqHost) || isCloudHost(getDirectHost(req)))) return true;
       return false;
     } catch {
       return false;
@@ -442,7 +450,8 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
     title: process.env.APP_TITLE || 'Đu Chart Online',
     symbols: SUPPORTED_SYMBOLS,
     timeframes: SUPPORTED_TIMEFRAMES,
-    actions: FOREX_ACTIONS
+    actions: FOREX_ACTIONS,
+    wsOrigin: process.env.PUBLIC_WS_ORIGIN || (process.env.RENDER_EXTERNAL_HOSTNAME ? `wss://${process.env.RENDER_EXTERNAL_HOSTNAME}` : '')
   }));
   app.get('/api/rooms', (_req, res) => {
     const list = [...roomManager.rooms.values()].map(r => roomManager.getRoomSnapshot(r.id));

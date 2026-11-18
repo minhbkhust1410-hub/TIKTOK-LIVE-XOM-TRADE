@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "node --test",
+    "test:ci": "node --test test/ambient-resilience.test.js test/core.test.js test/donation-thanks.test.js test/forex-multi-client.test.js test/frontend-visuals.test.js test/hall-rituals.test.js test/music.test.js test/server.test.js test/tts-api.test.js test/unlimited-hall.test.js test/viral-engine.test.js test/voice-engine.test.js",
     "dev": "node --watch server.js"
   },
   "dependencies": {

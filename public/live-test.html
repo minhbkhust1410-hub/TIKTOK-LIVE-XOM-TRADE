@@ -2017,9 +2017,15 @@
     };
 
     // --- WebSocket Realtime Client for Admin UI State Sync ---
-    function connectAdminWs() {
-      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${location.host}/ws?role=admin`;
+    async function connectAdminWs() {
+      let wsUrl;
+      try {
+        const { resolveWsUrl } = await import('/js/ws-url.js');
+        wsUrl = await resolveWsUrl('/ws?role=admin');
+      } catch {
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsUrl = `${protocol}//${location.host}/ws?role=admin`;
+      }
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {

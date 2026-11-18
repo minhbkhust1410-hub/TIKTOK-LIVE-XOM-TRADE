@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: xom-trade-live
+    runtime: docker
+    region: singapore
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/app-info
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: HOST
+        value: 0.0.0.0
+      - key: TILITA_DATA_DIR
+        value: /app/data
