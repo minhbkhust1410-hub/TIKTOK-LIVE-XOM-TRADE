@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xóm Trade · Phòng Test 1 Cửa Sổ (Admin + Khách Xem)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="/js/voice-engine.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0d0a08;
+      color: #f3f4f6;
+    }
+    .font-serif-temple { font-family: 'Cinzel', serif; }
+    /* Waveform Animation for Voice Engine */
+    @keyframes waveBounce {
+      0%, 100% { height: 4px; }
+      50% { height: 16px; }
+    }
+    .wave-bar {
+      width: 3px;
+      background: #f59e0b;
+      border-radius: 2px;
+      animation: waveBounce 0.8s ease-in-out infinite;
+      display: inline-block;
+    }
+    .wave-bar:nth-child(2) { animation-delay: 0.15s; background: #fbbf24; }
+    .wave-bar:nth-child(3) { animation-delay: 0.3s; background: #10b981; }
+    .wave-bar:nth-child(4) { animation-delay: 0.45s; background: #f59e0b; }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #1a120c; }
+    ::-webkit-scrollbar-thumb { background: #ae854d; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #dfbd74; }
+    .gold-glow { box-shadow: 0 0 20px rgba(223, 189, 116, 0.25); }
+    .btn-press:active { transform: scale(0.97); }
+
+    /* Ancient Temple Corner Brackets (Góc đồng phong thủy) */
+    .corner-bracket-box {
+      position: relative;
+    }
+    .corner-bracket-box::before,
+    .corner-bracket-box::after {
+      content: '';
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-color: #f3d28a;
+      border-style: solid;
+      pointer-events: none;
+      z-index: 35;
+      filter: drop-shadow(0 0 4px rgba(243, 210, 138, 0.8));
+    }
+    .corner-bracket-box::before {
+      top: 3px;
+      left: 3px;
+      border-width: 3px 0 0 3px;
+      border-top-left-radius: 12px;
+    }
+    .corner-bracket-box::after {
+      bottom: 3px;
+      right: 3px;
+      border-width: 0 3px 3px 0;
+      border-bottom-right-radius: 12px;
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-[#0e0a07]">
+
+  <!-- TOP HEADER BAR -->
+  <header class="bg-gradient-to-r from-[#24140d] via-[#381a0e] to-[#24140d] border-b-2 border-[#ae854d] px-4 py-2 flex flex-wrap items-center justify-between gap-3 shrink-0 shadow-lg z-30">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-amber-950 border border-[#dfbd74] flex items-center justify-center text-xl shadow-inner">
+        🏠
+      </div>
+      <div>
+        <h1 class="text-sm sm:text-base font-bold font-serif-temple text-[#f3d28a] tracking-wide flex items-center gap-2">
+          XÓM TRADE · PHÒNG TEST 1 CỬA SỔ
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-600/50 animate-pulse">● LIVE SYNC</span>
+        </h1>
+        <p class="text-[11px] text-amber-200/70 hidden sm:block">
+          Khách xem (OBS Live) bên trái 📺 và Bảng điều khiển (Admin) bên phải 🎛️ · Cùng 1 cửa sổ dễ dàng test mọi tính năng!
+        </p>
+      </div>
+    </div>
+
+    <!-- Center / Right: Quick Controls & Share Link -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- Layout Switcher -->
+      <div class="bg-stone-900/90 border border-stone-700/80 rounded-lg p-0.5 flex text-xs">
+        <button id="viewSplitBtn" class="px-2.5 py-1 rounded bg-amber-600 text-white font-bold transition">🖥️ Song Song</button>
+        <button id="viewLiveBtn" class="px-2.5 py-1 rounded text-stone-300 hover:text-white transition">📺 Khách Xem</button>
+        <button id="viewAdminBtn" class="px-2.5 py-1 rounded text-stone-300 hover:text-white transition">🎛️ Admin</button>
+      </div>
+
+      <!-- Master Audio Toggle Button -->
+      <button id="btnToggleAudio" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow-md btn-press transition">
+        <span id="audioIcon">🔊</span>
+        <span id="audioBtnText">Bật Tiếng & Nhạc Xóm Trade</span>
+      </button>
+
+      <!-- Volume Slider -->
+      <div class="hidden sm:flex items-center gap-1.5 bg-stone-900/90 border border-stone-700/80 rounded-lg px-2.5 py-1 text-xs text-amber-200">
+        <span>🎵</span>
+        <input id="cockpitVolumeSlider" type="range" min="0" max="100" value="50" class="w-16 accent-amber-500 cursor-pointer" title="Âm lượng nhạc nền">
+        <span id="cockpitVolumeLabel" class="font-mono text-[10px] w-7">50%</span>
+      </div>
+
+      <!-- Public Share Link Button -->
+      <button id="btnCopyPublicUrl" class="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-amber-300 border border-amber-600/50 font-bold text-xs flex items-center gap-1.5 shadow-md btn-press transition">
+        <span>🔗</span>
+        <span id="copyUrlText">Copy Link</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- BACKGROUND DIRECT AUDIO ELEMENT -->
+  <audio id="cockpitDirectAudio" loop preload="auto" src="/assets/music/sen-tinh.wav"></audio>
+
+  <!-- MAIN DUAL COCKPIT WORKSPACE -->
+  <main class="flex-1 flex overflow-hidden">
+    
+    <!-- LEFT PANEL: MÀN HÌNH KHÁCH XEM (OBS OVERLAY LIVE SCREEN) -->
+    <section id="panelViewer" class="w-full md:w-[50%] lg:w-[52%] xl:w-[55%] h-full bg-[#080504] border-r-2 border-[#ae854d]/60 flex flex-col relative transition-all duration-300">
+      <!-- Viewer Subheader -->
+      <div class="bg-[#1c1109] px-3 py-1.5 border-b border-[#ae854d]/40 flex items-center justify-between text-xs text-amber-200/90">
+        <div class="flex items-center gap-2 font-medium">
+          <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+          <span class="font-bold text-[#f3d28a]">MÀN HÌNH KHÁCH XEM TRỰC TIẾP (1080p OBS LIVE)</span>
+        </div>
+        <div class="flex items-center gap-2 text-[11px]">
+          <button id="btnViewerUnmute" class="px-2 py-0.5 rounded bg-amber-600/40 hover:bg-amber-600/70 border border-amber-500/60 text-amber-200 font-bold text-[10px] flex items-center gap-1 transition">
+            <span>🔊</span>
+            <span id="viewerUnmuteText">Bật Âm Thanh</span>
+          </button>
+          <span class="px-2 py-0.5 rounded bg-stone-900 border border-amber-600/30 text-amber-300 font-mono">Vàng XAU/USD 15M</span>
+          <a href="/overlay" target="_blank" class="text-amber-400 hover:underline flex items-center gap-0.5">Mở tab riêng ↗</a>
+        </div>
+      </div>
+
+      <!-- Live Stream Iframe Container -->
+      <div class="flex-1 relative overflow-hidden flex items-center justify-center p-2 sm:p-3 bg-[radial-gradient(#1e1109_1px,transparent_1px)] [background-size:16px_16px]">
+        <div class="relative h-full max-h-[960px] aspect-[9/16] rounded-2xl overflow-hidden border-2 border-[#dfbd74] shadow-[0_0_40px_rgba(0,0,0,0.95)] bg-black corner-bracket-box">
+          <iframe id="liveOverlayFrame" src="/overlay" class="w-full h-full border-0 block" allow="autoplay"></iframe>
+          <!-- Floating audio helper -->
+          <div class="absolute bottom-2 left-2 z-40 bg-black/75 backdrop-blur px-2 py-1 rounded text-[10px] text-amber-300 border border-amber-500/30">
+            🔔 Click vào màn hình để mở khóa âm thanh & nhạc phố thị
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: BẢNG ĐIỀU KHIỂN STREAMER (ADMIN MASTER COCKPIT) -->
+    <section id="panelAdmin" class="w-full md:w-[50%] lg:w-[48%] xl:w-[45%] h-full bg-[#140c07] flex flex-col overflow-y-auto transition-all duration-300">
+      
+      <!-- Admin Header -->
+      <div class="bg-[#24140d] px-4 py-2 border-b border-[#ae854d]/50 flex items-center justify-between sticky top-0 z-20 shadow">
+        <div class="flex items-center gap-2 text-xs font-bold text-[#f3d28a]">
+          <span>🎛️</span> BẢNG ĐIỀU KHIỂN STREAMER (BẤM LÀ LIVE ĂN THEO NGAY)
+        </div>
+        <span id="syncStatusTag" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40">WebSocket Đã Kết Nối</span>
+      </div>
+
+      <div class="p-4 space-y-4 text-xs">
+
+        <!-- 0. KHỐI CĂN CHỈNH TỈ LỆ & LÀM NÉT CHART TRADE VÀNG (XAU/USD) -->
+        <div class="bg-[#1f120a] border-2 border-amber-500/70 rounded-xl p-3 shadow-lg relative overflow-hidden">
+          <div class="flex items-center justify-between border-b border-amber-600/40 pb-2 mb-2.5">
+            <div class="flex items-center gap-1.5 font-bold text-amber-300 text-sm">
+              <span class="text-base">📊</span> BẢNG CHART TRADE VÀNG: CĂN TỈ LỆ & LÀM NÉT
+            </div>
+            <span id="badgeChartSharpStatus" class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/50">
+              ● Phóng To Nến (2.25×)
+            </span>
+          </div>
+
+          <div class="space-y-2.5">
+            <!-- 1. Tự động căn chỉnh tỉ lệ màn hình -->
+            <div>
+              <span class="text-[10px] text-stone-400 font-bold block mb-1 uppercase tracking-wider">
+                📐 TỈ LỆ KHUNG HÌNH (AUTO-SCALING RATIO):
+              </span>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button id="btnChartRatioAuto" class="bg-amber-600 hover:bg-amber-500 text-stone-950 font-extrabold py-1.5 px-2 rounded text-center shadow btn-press transition text-xs border border-amber-400">
+                  📐 Tự Động Cân (Auto)
+                </button>
+                <button id="btnChartRatioCinema" class="bg-stone-900 hover:bg-stone-800 text-amber-200 font-bold py-1.5 px-2 rounded text-center shadow btn-press transition text-xs border border-amber-700/60">
+                  🎬 Mở Rộng (16:9)
+                </button>
+                <button id="btnChartRatioStandard" class="bg-stone-900 hover:bg-stone-800 text-amber-200 font-bold py-1.5 px-2 rounded text-center shadow btn-press transition text-xs border border-amber-700/60">
+                  📺 Tiêu Chuẩn (2:1)
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Phóng đại nến & cỡ chữ trên điện thoại -->
+            <div class="pt-1.5 border-t border-stone-800">
+              <span class="text-[10px] text-stone-400 font-bold block mb-1 uppercase tracking-wider">
+                🔍 ĐỘ PHÓNG ĐẠI NẾN TRÊN ĐIỆN THOẠI (MOBILE ZOOM):
+              </span>
+              <div class="grid grid-cols-2 gap-1.5">
+                <button id="btnChartSharpUltra" class="bg-gradient-to-r from-emerald-700 to-teal-600 hover:from-emerald-600 hover:to-teal-500 text-white font-bold py-1.5 px-2 rounded text-center shadow btn-press transition text-xs border border-emerald-400">
+                  ✨ Phóng To Nến (2.25×)
+                </button>
+                <button id="btnChartSharpNative" class="bg-stone-900 hover:bg-stone-800 text-stone-300 font-bold py-1.5 px-2 rounded text-center shadow btn-press transition text-xs border border-stone-700">
+                  🔎 Phóng Vừa (1.75×)
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Đổi khung thời gian soi nến -->
+            <div class="pt-1.5 border-t border-stone-800 flex items-center justify-between gap-2">
+              <span class="text-[10px] text-stone-400 font-bold shrink-0 uppercase tracking-wider">
+                ⏱️ KHUNG THỜI GIAN:
+              </span>
+              <div class="flex gap-1">
+                <button class="chart-tf-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-800/60 font-bold text-xs" data-tf="1">1M</button>
+                <button class="chart-tf-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-800/60 font-bold text-xs" data-tf="5">5M</button>
+                <button class="chart-tf-btn px-2 py-0.5 rounded bg-amber-600 text-stone-950 font-extrabold text-xs" data-tf="15">15M</button>
+                <button class="chart-tf-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-800/60 font-bold text-xs" data-tf="60">1H</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. KHỐI KÉO CO BÒ HÚC VS GẤU VẢ -->
+        <div class="bg-[#1f120a] border border-[#dfbd74]/60 rounded-xl p-3 shadow-md">
+          <div class="flex items-center justify-between border-b border-[#ae854d]/40 pb-2 mb-2.5">
+            <div class="flex items-center gap-1.5 font-bold text-amber-200">
+              <span class="text-base">⚔️</span> ĐẤU TRƯỜNG KÉO CO: BÒ HÚC vs GẤU VẢ
+            </div>
+            <span id="cockpitTugTime" class="px-2 py-0.5 rounded bg-red-950 text-red-300 font-mono font-bold text-[11px] border border-red-500/40">Chờ Hiệp</span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2 mb-2.5 text-center">
+            <div class="bg-emerald-950/50 border border-emerald-600/40 rounded-lg p-2">
+              <div class="text-[11px] text-emerald-300 font-bold">🐂 THÁNH BÒ (BUY)</div>
+              <div id="cockpitBullPower" class="text-lg font-mono font-extrabold text-emerald-400 mt-0.5">0 kg</div>
+            </div>
+            <div class="bg-red-950/50 border border-red-600/40 rounded-lg p-2">
+              <div class="text-[11px] text-red-300 font-bold">🐻 CỤ GẤU (SHORT)</div>
+              <div id="cockpitBearPower" class="text-lg font-mono font-extrabold text-red-400 mt-0.5">0 kg</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button id="btnTugStart" class="bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold py-2 px-2 rounded-lg text-center shadow btn-press transition col-span-2 sm:col-span-1">
+              ▶ Bắt Đầu (90s)
+            </button>
+            <button id="btnTugBullPull" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-2 px-2 rounded-lg text-center shadow btn-press transition">
+              🐂 Bò Húc +50kg
+            </button>
+            <button id="btnTugBearPull" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-2 rounded-lg text-center shadow btn-press transition">
+              🐻 Gấu Vả +50kg
+            </button>
+            <button id="btnTugReset" class="bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold py-2 px-2 rounded-lg text-center shadow btn-press transition">
+              🔄 Reset Hiệp
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. KHỐI VÒNG XOAY LUÂN HỒI & CÒI CÁ MẬP THANH LÝ -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          
+          <!-- Vòng Xoay Bói Nến -->
+          <div class="bg-[#1f120a] border border-[#dfbd74]/60 rounded-xl p-3 shadow-md flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-amber-200 flex items-center gap-1.5 border-b border-[#ae854d]/40 pb-1.5 mb-2">
+                <span>🎡</span> VÒNG XOAY LUÂN HỒI
+              </div>
+              <p class="text-[11px] text-stone-400 mb-2.5">
+                Quay số ngẫu nhiên 8 quẻ: Margin Call X100, Gồng Lỗ Bất Tử, Về Bờ, Cắt Ngay Đáy...
+              </p>
+            </div>
+            <button id="btnSpinWheel" class="w-full bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-stone-950 font-extrabold py-2 px-3 rounded-lg text-center shadow btn-press transition">
+              🎰 Quay Vòng Xoay Ngay
+            </button>
+          </div>
+
+          <!-- Còi Báo Đu Đỉnh / Thanh Lý -->
+          <div class="bg-[#1f120a] border border-[#dfbd74]/60 rounded-xl p-3 shadow-md flex flex-col justify-between">
+            <div>
+              <div class="font-bold text-red-300 flex items-center gap-1.5 border-b border-[#ae854d]/40 pb-1.5 mb-2">
+                <span>🚨</span> CÒI BÁO THANH LÝ (MINIGAME)
+              </div>
+              <p class="text-[11px] text-stone-400 mb-2.5">
+                Kích hoạt còi hú báo động đỏ, cá mập nuốt nến, buộc cả xóm bấm 15 lần Stop-loss để giải cứu!
+              </p>
+            </div>
+            <button id="btnTriggerSiren" class="w-full bg-red-700 hover:bg-red-600 text-white font-extrabold py-2 px-3 rounded-lg text-center shadow btn-press transition">
+              🚨 Rung Còi Thanh Lý Khẩn
+            </button>
+          </div>
+
+        </div>
+
+        <!-- 3. KHỐI TRỢ LỰC CHIẾN LỆNH & BƠM NẾN VÀNG -->
+        <div class="bg-[#1f120a] border border-[#dfbd74]/60 rounded-xl p-3 shadow-md">
+          <div class="font-bold text-[#f3d28a] flex items-center gap-1.5 border-b border-[#ae854d]/40 pb-1.5 mb-2.5">
+            <span>🚀</span> KHỐI TRỢ LỰC CHIẾN LỆNH & BƠM NẾN VÀNG
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button id="btnIncenseRitual" class="bg-amber-900/80 hover:bg-amber-800 text-amber-200 border border-amber-600/50 font-bold py-2 px-2 rounded-lg text-center shadow btn-press transition">
+              🕯️ Tiếp Năng Lượng (+15 giá)
+            </button>
+            <button id="btnLotusRitual" class="bg-pink-950/80 hover:bg-pink-900 text-pink-200 border border-pink-600/50 font-bold py-2 px-2 rounded-lg text-center shadow btn-press transition">
+              🌸 Quà Chốt Lời (+5 Bò)
+            </button>
+            <button id="btnPrayerRitual" class="bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border border-indigo-600/50 font-bold py-2 px-2 rounded-lg text-center shadow btn-press transition">
+              🏮 Đèn Soi Chart Về Bờ
+            </button>
+            <button id="btnFortuneRitual" class="bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-600/50 font-bold py-2 px-2 rounded-lg text-center shadow btn-press transition">
+              🪙 Quẻ Soi Nến (99 Quẻ)
+            </button>
+          </div>
+        </div>
+
+        <!-- 3B. KHỐI ÂM THANH & NHẠC XÓM TRADE -->
+        <div class="bg-[#1f120a] border border-[#dfbd74]/60 rounded-xl p-3 shadow-md">
+          <div class="flex items-center justify-between border-b border-[#ae854d]/40 pb-1.5 mb-2.5">
+            <div class="font-bold text-[#f3d28a] flex items-center gap-1.5">
+              <span>🎵</span> ÂM THANH & NHẠC XÓM TRADE
+            </div>
+            <span id="musicPlayingBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40">● Nhạc Sẵn Sàng</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-2.5">
+            <!-- Chọn Bài Nhạc -->
+            <div class="sm:col-span-2 flex flex-col gap-1">
+              <label class="text-[10px] text-amber-300 font-bold">CHỌN BÀI NHẠC NỀN:</label>
+              <div class="flex gap-1.5">
+                <select id="selectCockpitMusic" class="flex-1 bg-stone-900 border border-amber-900/60 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-amber-500">
+                  <option value="music/sen-tinh.wav" selected>🔥 Xóm Trade Rộn Ràng · Nhịp Điệu Hàng Rong (124 BPM)</option>
+                  <option value="music/nen-xanh-bung-no.wav">🚀 Nến Xanh Bùng Nổ · Bull Run Sôi Động (128 BPM)</option>
+                  <option value="music/hang-rong-pho-thi.wav">🎮 Hàng Rong Phố Thị · Giai Điệu Tuổi Thơ (126 BPM)</option>
+                  <option value="music/may-thien.wav">⚡ Bắt Đáy Thành Công · Nhịp Sống Vỉa Hè (120 BPM)</option>
+                  <option value="music/truc-an.wav">🎉 Động Đu Chart · Party Xóm Trade (125 BPM)</option>
+                </select>
+                <button id="btnApplyMusicChoice" class="bg-amber-700 hover:bg-amber-600 text-white font-bold px-2.5 py-1 rounded text-xs transition shrink-0">
+                  Đổi Bài
+                </button>
+              </div>
+            </div>
+
+            <!-- Nút Bật/Tắt -->
+            <div class="flex flex-col gap-1 justify-end">
+              <button id="btnAdminMusicToggle" class="w-full bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-stone-950 font-extrabold py-1.5 px-2 rounded text-xs transition">
+                🔊 Bật / Tắt Nhạc
+              </button>
+            </div>
+          </div>
+
+          <!-- Nút Nghe Thử Các Âm Thanh Đặc Trưng Của Xóm Trade -->
+          <div class="border-t border-[#ae854d]/30 pt-2">
+            <span class="text-[10px] text-stone-400 block mb-1.5">BẤM THỬ HIỆU ỨNG ÂM THANH XÓM TRADE:</span>
+            <div class="flex flex-wrap gap-1.5">
+              <button id="btnSoundWoodClick" class="px-2.5 py-1 rounded bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-900/60 text-[11px] transition">
+                🪵 Gõ Phím Click Lệnh
+              </button>
+              <button id="btnSoundBell" class="px-2.5 py-1 rounded bg-stone-900 hover:bg-stone-800 text-yellow-200 border border-yellow-900/60 text-[11px] transition">
+                🔔 Chuông Chốt Lời
+              </button>
+              <button id="btnSoundBullWin" class="px-2.5 py-1 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 text-[11px] transition">
+                🐂 Nhạc Bò Thắng
+              </button>
+              <button id="btnSoundBearWin" class="px-2.5 py-1 rounded bg-red-950 hover:bg-red-900 text-red-300 border border-red-800/60 text-[11px] transition">
+                🐻 Nhạc Gấu Thắng
+              </button>
+              <button id="btnSoundSiren" class="px-2.5 py-1 rounded bg-stone-900 hover:bg-stone-800 text-rose-300 border border-rose-900/60 text-[11px] transition">
+                🚨 Tiếng Còi Báo Động
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. KHỐI CHÀO TRADER MỚI & BẮN TIN NÓNG PHỐ WALL -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          
+          <!-- Chào Trader Vừa Vào Phòng -->
+          <div class="bg-[#1f120a] border border-[#dfbd74]/60 rounded-xl p-3 shadow-md">
+            <div class="font-bold text-amber-200 flex items-center justify-between border-b border-[#ae854d]/40 pb-1.5 mb-2">
+              <span class="flex items-center gap-1.5"><span>👋</span> CHÀO TRADER MỚI VÀO PHÒNG</span>
+              <span class="text-[10px] text-amber-300 font-mono">Cấp Ghế Ngồi Trade</span>
+            </div>
+            <div class="flex flex-wrap gap-1 mb-2">
+              <button class="name-preset-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-900/60 text-[10px] transition" data-name="Nam Khánh">Nam Khánh</button>
+              <button class="name-preset-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-900/60 text-[10px] transition" data-name="Mai Hoa">Mai Hoa</button>
+              <button class="name-preset-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-900/60 text-[10px] transition" data-name="Trần Tuấn">Trần Tuấn</button>
+              <button class="name-preset-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-900/60 text-[10px] transition" data-name="Chiến Thần Long">Chiến Thần Long</button>
+            </div>
+            <div class="flex gap-2">
+              <input id="inputTraderName" type="text" value="Nam Khánh" placeholder="Tên Trader..." class="flex-1 bg-stone-900 border border-stone-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+              <button id="btnWelcomeTrader" class="bg-amber-700 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg btn-press transition shrink-0">
+                Kéo Ghế Vào
+              </button>
+              <button id="btnFollowTrader" class="bg-indigo-700 hover:bg-indigo-600 text-white font-bold px-2.5 py-1.5 rounded-lg btn-press transition shrink-0 flex items-center gap-1">
+                <span>⭐</span> Follow Mới
+              </button>
+              <button id="btnLike1000Trader" class="bg-gradient-to-r from-rose-700 to-pink-600 hover:from-rose-600 hover:to-pink-500 text-white font-bold px-2.5 py-1.5 rounded-lg btn-press transition shrink-0 flex items-center gap-1 shadow-lg">
+                <span>💖</span> Thả 1.000 Tim
+              </button>
+            </div>
+            <p class="text-[10px] text-stone-400 mt-1.5">
+              Bay thẻ chào đón lên màn hình và xếp ngay 1 ghế ngồi trade trong Xóm Trade!
+            </p>
+          </div>
+
+          <!-- Bắn Tin Nóng Phố Wall -->
+          <div class="bg-[#1f120a] border border-[#dfbd74]/60 rounded-xl p-3 shadow-md">
+            <div class="font-bold text-red-300 flex items-center justify-between border-b border-[#ae854d]/40 pb-1.5 mb-2">
+              <span class="flex items-center gap-1.5"><span>📰</span> BẮN TIN NÓNG PHỐ WALL</span>
+              <span class="text-[10px] text-amber-200/70 font-mono">20+ Kịch Bản</span>
+            </div>
+            
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              <button class="news-preset-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-red-300 border border-red-900/60 text-[10px] transition" data-news="FED Powell: Lãi suất tăng vọt nếu còn cố chấp nhồi thêm lệnh Buy!">🏛️ FED Powell</button>
+              <button class="news-preset-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-amber-300 border border-amber-900/60 text-[10px] transition" data-news="NON-FARM NÓNG: Quét râu 150 pip hai đầu, anh em rút dây mạng gấp!">📊 Non-Farm 150p</button>
+              <button class="news-preset-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-yellow-300 border border-yellow-900/60 text-[10px] transition" data-news="BÁO CÁO CPI MỸ: Lạm phát hạ nhiệt vì trader chuyển sang ăn mì tôm gồng lỗ!">📈 Bão CPI</button>
+              <button class="news-preset-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-purple-300 border border-purple-900/60 text-[10px] transition" data-news="CÁ MẬP XẢ HÀNG: Khối ngoại vừa bán tháo 1,000 tỷ USD đón đầu lệnh Short!">🦈 Cá Mập Xả</button>
+              <button class="news-preset-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-cyan-300 border border-cyan-900/60 text-[10px] transition" data-news="TUYỆT KỸ RÚT DÂY MẠNG: Kỷ lục rút modem Wi-Fi đúng 1 giây trước nến tử thần!">🔌 Rút Dây Mạng</button>
+            </div>
+
+            <div class="flex gap-2">
+              <input id="inputNewsText" type="text" value="FED Powell: Cắt ngay đáy 3 giây sau nến dựng cột 40 giá!" class="flex-1 bg-stone-900 border border-stone-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500">
+              <button id="btnBroadcastNews" class="bg-red-700 hover:bg-red-600 text-white font-bold px-3 py-1.5 rounded-lg btn-press transition shrink-0">
+                Bắn Tin
+              </button>
+            </div>
+            <p class="text-[10px] text-stone-400 mt-1.5">
+              Hiện popup tin nóng đỏ rực trên đỉnh màn hình + cập nhật bảng chữ chạy bên dưới.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- 4B. KHỐI GIÁO SƯ CÚN CHÂM BIẾM PHÂN TÍCH KỸ THUẬT -->
+        <div class="bg-[#1f120a] border border-[#dfbd74]/60 rounded-xl p-3 shadow-md">
+          <div class="font-bold text-[#f3d28a] flex items-center justify-between border-b border-[#ae854d]/40 pb-1.5 mb-2">
+            <span class="flex items-center gap-1.5"><span>🐕</span> GIÁO SƯ CÚN CHÂM BIẾM (PROFESSOR DOG SẮC SẢO)</span>
+            <span class="text-[10px] text-amber-300 font-mono">30 Lời Thoại PTKT</span>
+          </div>
+          
+          <div class="flex flex-wrap gap-1.5 mb-2.5">
+            <button class="dog-preset-btn px-2 py-1 rounded bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-800/60 text-[11px] transition" data-quote="GS. Cún: Jesse Livermore dạy: Tiền kiếm được là nhờ kiên nhẫn ngồi yên chờ đợi, chứ không phải cào phím mỗi phút! 🧘‍♂️">📜 Livermore Ngồi Yên</button>
+            <button class="dog-preset-btn px-2 py-1 rounded bg-stone-900 hover:bg-stone-800 text-yellow-200 border border-yellow-800/60 text-[11px] transition" data-quote="GS. Cún: CZ Binance dặn: If you cannot hold, you will not be rich! Không gồng được thì đừng mơ làm đại gia! 💎">💎 CZ: If Cant Hold</button>
+            <button class="dog-preset-btn px-2 py-1 rounded bg-stone-900 hover:bg-stone-800 text-cyan-200 border border-cyan-800/60 text-[11px] transition" data-quote="GS. Cún: CZ dặn con số 4 thần thánh: Bỏ ngoài tai mọi FUD và tiếng ồn, tập trung soi chart và bảo vệ tài khoản! 4️⃣">4️⃣ CZ: Bỏ Qua FUD</button>
+            <button class="dog-preset-btn px-2 py-1 rounded bg-stone-900 hover:bg-stone-800 text-emerald-200 border border-emerald-800/60 text-[11px] transition" data-quote="GS. Cún: George Soros dạy: Đúng hay sai không quan trọng, quan trọng là lúc đúng ăn bao nhiêu pip, lúc sai mất bao nhiêu! 🎯">🎯 Soros Quản Trị Vốn</button>
+            <button class="dog-preset-btn px-2 py-1 rounded bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-800/60 text-[11px] transition" data-quote="GS. Cún: Thầy bảo nến búa rút chân, trò lại tưởng búa đập vỡ tài khoản! 🔨">🔨 Nến Búa Rút Chân</button>
+            <button class="dog-preset-btn px-2 py-1 rounded bg-stone-900 hover:bg-stone-800 text-red-200 border border-red-800/60 text-[11px] transition" data-quote="GS. Cún: Phân kỳ RSI ba đoạn rõ mồn một, mà trò vẫn cố cãi thầy nhồi lệnh! 📉">📉 Phân Kỳ RSI 3 Đoạn</button>
+            <button class="dog-preset-btn px-2 py-1 rounded bg-stone-900 hover:bg-stone-800 text-pink-200 border border-pink-800/60 text-[11px] transition" data-quote="GS. Cún: Chốt non 0.5 pip ăn bát mì tôm, nhìn nến chạy tiếp 100 pip mà rớt nước mắt! 🍜">🍜 Chốt Non 0.5 Pip</button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span id="currentDogQuoteDisplay" class="flex-1 bg-stone-950 border border-amber-900/60 rounded-lg px-2.5 py-1.5 text-xs text-amber-200 italic truncate">
+              GS. Cún: Thầy bảo nến búa rút chân, trò lại tưởng búa đập vỡ tài khoản! 🔨
+            </span>
+            <button id="btnNextDogQuote" class="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-stone-950 font-bold px-3 py-1.5 rounded-lg btn-press transition shrink-0">
+              🎓 Đổi Lời Giảng
+            </button>
+          </div>
+        </div>
+
+        <!-- 4C. KHỐI TRUNG TÂM GIỌNG NÓI THÔNG MINH (VIETNAMESE TTS ENGINE) -->
+        <div class="bg-[#1f120a] border-2 border-[#dfbd74] rounded-xl p-3.5 shadow-xl relative overflow-hidden">
+          <div class="font-bold text-[#fef08a] flex items-center justify-between border-b border-[#ae854d]/50 pb-2 mb-2.5">
+            <span class="flex items-center gap-2">
+              <span class="text-base">🎙️</span>
+              <span class="tracking-wide">GIỌNG NÓI THÔNG MINH & XƯỚNG TÊN (VIETNAMESE TTS)</span>
+            </span>
+            <div class="flex items-center gap-2">
+              <div id="ttsWaveform" class="hidden items-end gap-0.5 h-4 px-1.5 py-0.5 bg-black/40 rounded border border-amber-500/30">
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+              </div>
+              <span id="ttsStatusBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+                ● Sẵn Sàng
+              </span>
+            </div>
+          </div>
+
+          <!-- Thông tin Giọng Đọc & Trực Quan Hóa Câu Nói -->
+          <div class="bg-stone-950/80 border border-amber-900/60 rounded-lg p-2 mb-3 flex flex-col gap-1.5">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-stone-400 flex items-center gap-1">
+                <span>🎤</span> Giọng hiện tại: <b id="ttsCurrentVoiceLabel" class="text-amber-200 font-normal">Đang nhận diện giọng Việt...</b>
+              </span>
+              <span id="ttsQueueBadge" class="text-[10px] text-stone-400 font-mono">Hàng đợi: 0</span>
+            </div>
+            <div class="flex items-center gap-1.5 bg-stone-900/90 rounded px-2 py-1 text-xs">
+              <span class="text-amber-400 shrink-0 font-bold">🔊 Đang nói:</span>
+              <span id="ttsCurrentTextDisplay" class="text-amber-100 italic truncate font-sans">
+                Chưa phát giọng nói. Hãy bấm nút thử bên dưới!
+              </span>
+            </div>
+          </div>
+
+          <!-- Nhóm Nút Bấm Test Giọng Nói Đầy Đủ (Interactive TTS Action Test) -->
+          <div class="mb-3">
+            <span class="text-[10px] text-amber-300/80 font-bold block mb-1.5 tracking-wider uppercase">
+              BẤM THỬ CÁC TÌNH HUỐNG XƯỚNG GIỌNG (TTS 1-CLICK TEST):
+            </span>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <button id="btnVoiceTestWelcome" class="bg-amber-800/90 hover:bg-amber-700 text-white font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs border border-amber-600/50 flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-[#fef08a]"><span>🗣️</span> Test Chào Khách</span>
+                <span class="text-[10px] text-amber-200/70 font-normal truncate">Chào mừng [Tên] vào Xóm Trade...</span>
+              </button>
+
+              <button id="btnVoiceTestFollow" class="bg-indigo-900/90 hover:bg-indigo-800 text-white font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs border border-indigo-600/50 flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-indigo-200"><span>🔔</span> Test Khách Follow</span>
+                <span class="text-[10px] text-indigo-300/70 font-normal truncate">Cảm ơn [Tên] đã theo dõi kênh...</span>
+              </button>
+
+              <button id="btnVoiceTestRose" class="bg-rose-950/90 hover:bg-rose-900 text-white font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs border border-rose-600/50 flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-rose-200"><span>🌹</span> Test Tặng Bông</span>
+                <span class="text-[10px] text-rose-300/70 font-normal truncate">Cảm ơn [Tên] đã gửi 5 bông hoa...</span>
+              </button>
+
+              <button id="btnVoiceTestGrand" class="bg-gradient-to-r from-amber-700 to-yellow-600 hover:from-amber-600 hover:to-yellow-500 text-stone-950 font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs border border-amber-400/60 flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-stone-950"><span>👑</span> Test Quà Khủng 500 Xu</span>
+                <span class="text-[10px] text-stone-900 font-semibold truncate">Cả Xóm Trade cảm ơn [Tên] tặng quà...</span>
+              </button>
+
+              <button id="btnVoiceTestDog" class="bg-cyan-950/90 hover:bg-cyan-900 text-white font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs border border-cyan-600/50 flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-cyan-200"><span>🐕</span> Giọng Giáo Sư Cún</span>
+                <span class="text-[10px] text-cyan-300/70 font-normal truncate">GS Cún phán: nến búa rút chân...</span>
+              </button>
+
+              <button id="btnVoiceTestFortune" class="bg-emerald-950/90 hover:bg-emerald-900 text-white font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs border border-emerald-600/50 flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-emerald-200"><span>📜</span> Lời Dạy Livermore / CZ</span>
+                <span class="text-[10px] text-emerald-300/70 font-normal truncate">Jesse Livermore, CZ, Soros, Buffett...</span>
+              </button>
+
+              <button id="btnVoiceTestThousandLikes" class="bg-gradient-to-r from-pink-900 to-rose-900 hover:from-pink-800 hover:to-rose-800 text-white font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs border border-pink-500/60 flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-pink-200"><span>💖</span> Tri Ân 1.000 Tim</span>
+                <span class="text-[10px] text-pink-300/70 font-normal truncate">Cảm ơn [Tên] thả hơn 1000 tim...</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bảng Tùy Chỉnh Giọng Nói (Fine-tuning Voice Controls) -->
+          <div class="bg-stone-950/70 border border-stone-800 rounded-lg p-2.5 text-xs space-y-2">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label class="text-[11px] text-stone-300 font-bold block mb-1">⚡ Động Cơ Giọng Nói (TTS):</label>
+                <select id="selectVoiceEngine" class="w-full bg-stone-900 border border-amber-600/60 rounded px-2 py-1 text-xs text-amber-300 focus:outline-none focus:border-amber-400">
+                  <option value="neural" selected>🌟 MS Edge Neural (GitHub Free - Mượt Chuẩn)</option>
+                  <option value="browser">💻 Web Speech API (Trình Duyệt Local)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-[11px] text-stone-300 font-bold block mb-1">🎭 Nhân Vật / Giọng Đọc:</label>
+                <select id="selectVoiceProfile" class="w-full bg-stone-900 border border-stone-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-amber-500">
+                  <option value="female" selected>🌸 Hoài My (Nữ - Ngọt ngào, truyền cảm)</option>
+                  <option value="male">🦁 Nam Minh (Nam - Trầm ấm, uy nghiêm)</option>
+                  <option value="auto">🤖 Tự Động (Hoài My chào / Nam Minh đọc quote)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-[11px] text-stone-300 font-bold block mb-1">🎙️ Giọng Trình Duyệt Offline:</label>
+                <select id="selectBrowserVoiceList" class="w-full bg-stone-900 border border-stone-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-amber-500">
+                  <option value="">Đang tải danh sách giọng...</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Thanh Trượt Tốc Độ (Rate), Cao Độ (Pitch), Âm Lượng (Volume) -->
+            <div class="grid grid-cols-3 gap-2 pt-1 border-t border-stone-800">
+              <div>
+                <div class="flex justify-between text-[10px] text-stone-400 mb-0.5">
+                  <span>Tốc độ nói:</span>
+                  <b id="ttsRateBadge" class="text-amber-300">1.0x</b>
+                </div>
+                <input id="ttsRateSlider" type="range" min="0.8" max="1.4" step="0.05" value="1.0" class="w-full accent-amber-500 h-1 bg-stone-800 rounded cursor-pointer">
+              </div>
+
+              <div>
+                <div class="flex justify-between text-[10px] text-stone-400 mb-0.5">
+                  <span>Cao độ giọng:</span>
+                  <b id="ttsPitchBadge" class="text-amber-300">1.0x</b>
+                </div>
+                <input id="ttsPitchSlider" type="range" min="0.7" max="1.4" step="0.05" value="1.0" class="w-full accent-amber-500 h-1 bg-stone-800 rounded cursor-pointer">
+              </div>
+
+              <div>
+                <div class="flex justify-between text-[10px] text-stone-400 mb-0.5">
+                  <span>Âm lượng TTS:</span>
+                  <b id="ttsVolumeBadge" class="text-amber-300">90%</b>
+                </div>
+                <input id="ttsVolumeSlider" type="range" min="0" max="100" step="5" value="90" class="w-full accent-amber-500 h-1 bg-stone-800 rounded cursor-pointer">
+              </div>
+            </div>
+
+            <!-- Nút Công Tắc Bật/Tắt Master TTS & Dừng Ngay -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-stone-800">
+              <label class="flex items-center gap-1.5 cursor-pointer text-stone-300 text-[11px]">
+                <input id="checkSyncOverlayTts" type="checkbox" checked class="accent-amber-500 rounded">
+                <span>Đồng bộ phát giọng nói sang màn hình Khách Xem (OBS)</span>
+              </label>
+
+              <div class="flex items-center gap-1.5">
+                <button id="btnStopTts" class="px-2.5 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-600 text-[11px] transition">
+                  ⏹️ Dừng Đọc
+                </button>
+                <button id="btnToggleMasterTts" class="px-3 py-1 rounded bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-[11px] shadow transition">
+                  🔊 TTS: ĐANG BẬT
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4C. TIỂU PHẨM HÀI XÓM TRADE & HUẤN THỊ HUYỀN THOẠI TRADER -->
+        <div class="bg-[#1f120a] border border-[#dfbd74]/60 rounded-xl p-3 shadow-md">
+          <div class="font-bold text-[#f3d28a] flex items-center justify-between border-b border-[#ae854d]/40 pb-1.5 mb-2.5">
+            <span class="flex items-center gap-1.5"><span>🧹</span> TIỂU PHẨM HÀI XÓM TRADE & HUẤN THỊ HUYỀN THOẠI TRADER</span>
+            <span class="text-[10px] text-amber-300 font-mono">Tự Động & Kích Hoạt Thủ Công</span>
+          </div>
+
+          <!-- Nhóm 1: Tiểu phẩm hài phố thị Xóm Trade -->
+          <div class="mb-3">
+            <span class="text-[10px] text-amber-300/80 font-bold block mb-1.5 tracking-wider uppercase">
+              🎬 1. KÍCH HOẠT TIỂU PHẨM HÀI (SLAPSTICK COMEDY + ÂM THANH SỐNG ĐỘNG):
+            </span>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button id="btnTriggerComedyWife" class="bg-gradient-to-r from-red-900 to-rose-900 hover:from-red-800 hover:to-rose-800 text-white font-bold py-2 px-2 rounded-lg text-left shadow btn-press transition text-xs border border-red-500/60 flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-red-200"><span>🧹</span> Vợ Đuổi Chồng</span>
+                <span class="text-[9px] text-red-300/70 font-normal truncate">Trade thua x100 ra đê...</span>
+              </button>
+
+              <button id="btnTriggerComedyChicken" class="bg-gradient-to-r from-amber-900 to-yellow-900 hover:from-amber-800 hover:to-yellow-800 text-white font-bold py-2 px-2 rounded-lg text-left shadow btn-press transition text-xs border border-yellow-500/60 flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-yellow-200"><span>🐔</span> Gà Chó Cục Tác</span>
+                <span class="text-[9px] text-yellow-300/70 font-normal truncate">Nến đỏ quét bay tán loạn...</span>
+              </button>
+
+              <button id="btnTriggerComedyTea" class="bg-gradient-to-r from-orange-950 to-amber-900 hover:from-orange-900 hover:to-amber-800 text-white font-bold py-2 px-2 rounded-lg text-left shadow btn-press transition text-xs border border-orange-500/60 flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-orange-200"><span>👵</span> Quán Nước Đòi Nợ</span>
+                <span class="text-[9px] text-orange-300/70 font-normal truncate">3 ấm trà đá gồng lỗ...</span>
+              </button>
+
+              <button id="btnTriggerComedyModem" class="bg-gradient-to-r from-cyan-950 to-blue-900 hover:from-cyan-900 hover:to-blue-800 text-white font-bold py-2 px-2 rounded-lg text-left shadow btn-press transition text-xs border border-cyan-500/60 flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-cyan-200"><span>🔌</span> Rút Phích Modem</span>
+                <span class="text-[9px] text-cyan-300/70 font-normal truncate">Stop-loss tối thượng...</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Nhóm 2: Huấn thị nghiêm túc hài từ các huyền thoại -->
+          <div>
+            <span class="text-[10px] text-amber-300/80 font-bold block mb-1.5 tracking-wider uppercase">
+              🏛️ 2. TUYÊN BỐ HUYỀN THOẠI (NGHIÊM TÚC MỘT CÁCH HÀI HƯỚC + CHUÔNG GONG):
+            </span>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <button id="btnLegendCZ" class="bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-600/50 font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-amber-300"><span>💎</span> CZ Binance</span>
+                <span class="text-[9px] text-stone-400 font-normal truncate">If you cannot hold... Số 4!</span>
+              </button>
+
+              <button id="btnLegendLivermore" class="bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-600/50 font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-yellow-300"><span>📜</span> Jesse Livermore</span>
+                <span class="text-[9px] text-stone-400 font-normal truncate">Ngồi yên kiên nhẫn...</span>
+              </button>
+
+              <button id="btnLegendSoros" class="bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-600/50 font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-emerald-300"><span>🎯</span> George Soros</span>
+                <span class="text-[9px] text-stone-400 font-normal truncate">Đúng sai không quan trọng...</span>
+              </button>
+
+              <button id="btnLegendBuffett" class="bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-600/50 font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-cyan-300"><span>🏛️</span> Warren Buffett</span>
+                <span class="text-[9px] text-stone-400 font-normal truncate">Nguyên tắc 1 & 2 không cháy...</span>
+              </button>
+
+              <button id="btnLegendSatoshi" class="bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-600/50 font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-yellow-400"><span>⚡</span> Satoshi Nakamoto</span>
+                <span class="text-[9px] text-stone-400 font-normal truncate">Không có thời gian giải thích...</span>
+              </button>
+
+              <button id="btnLegendPowell" class="bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-600/50 font-bold py-2 px-2.5 rounded-lg text-left shadow btn-press transition text-xs flex flex-col gap-0.5">
+                <span class="flex items-center gap-1 text-purple-300"><span>🦅</span> FED Powell</span>
+                <span class="text-[9px] text-stone-400 font-normal truncate">Duy trì lãi suất rung lắc...</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4D. KHỐI LỚP PHỦ CHỐNG BẢN QUYỀN & WATERMARK ẨN -->
+        <div class="bg-[#1f120a] border-2 border-emerald-600/70 rounded-xl p-3.5 shadow-xl relative overflow-hidden">
+          <div class="font-bold text-emerald-300 flex items-center justify-between border-b border-emerald-700/50 pb-2 mb-2.5">
+            <span class="flex items-center gap-2">
+              <span class="text-base">🛡️</span>
+              <span class="tracking-wide">LỚP PHỦ CHỐNG BẢN QUYỀN & WATERMARK ẨN</span>
+            </span>
+            <span id="badgeShieldLive" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/50">
+              ● Đang Bảo Vệ (Active)
+            </span>
+          </div>
+
+          <!-- Thông tin giải thích thuật toán bảo vệ -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
+            <div class="bg-stone-950/80 border border-stone-800 rounded-lg p-2.5 space-y-1">
+              <span class="text-stone-400 block text-[10px] uppercase font-bold tracking-wider">CƠ CHẾ BẢO VỆ CHỐNG BOT QUÉT:</span>
+              <p class="text-stone-300 text-[11px] leading-relaxed">
+                • <b>Phá mã băm video (pHash/DCT):</b> Ma trận hạt vi mô (micro-noise 0.9%) liên tục làm lệch tần số không gian của khung hình, khiến bot TikTok/YouTube không thể so khớp dữ liệu nến bản quyền.
+              </p>
+              <p class="text-stone-300 text-[11px] leading-relaxed">
+                • <b>Sub-pixel Phase Drift:</b> Tọa độ lớp phủ tự dịch chuyển chậm 1-2px, ngăn chặn bot chụp đối chiếu ảnh tĩnh.
+              </p>
+            </div>
+
+            <div class="bg-stone-950/80 border border-stone-800 rounded-lg p-2.5 space-y-1.5">
+              <span class="text-stone-400 block text-[10px] uppercase font-bold tracking-wider">WATERMARK NHẬN DIỆN CHỦ QUYỀN:</span>
+              <div class="bg-black/60 rounded px-2 py-1.5 border border-emerald-900/60 font-mono text-[10px] text-emerald-400 truncate">
+                CHUA DU CHART LIVE · ID #9841-VT · AUTHENTIC
+              </div>
+              <p class="text-stone-400 text-[10px]">
+                Watermark được khắc chìm toàn màn hình ở mức <b>0.9% tương phản</b>: mắt thường nhìn vào không thấy gì, nhưng có giá trị pháp lý số khi cần kháng nghị gỡ gậy bản quyền.
+              </p>
+            </div>
+          </div>
+
+          <!-- Thanh điều khiển: Soi Watermark & Độ Đậm -->
+          <div class="bg-stone-950/90 border border-emerald-900/50 rounded-lg p-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+              <span class="text-stone-400 text-[11px] shrink-0">Độ Đậm Watermark:</span>
+              <input id="sliderWatermarkOpacity" type="range" min="0.002" max="0.03" step="0.001" value="0.009" class="flex-1 accent-emerald-500 h-1 bg-stone-800 rounded cursor-pointer">
+              <b id="badgeWatermarkOpacity" class="text-emerald-300 font-mono text-[11px] shrink-0">0.9% (Tàng hình)</b>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button id="btnToggleWatermarkReveal" class="px-3 py-1.5 rounded-lg bg-emerald-800/80 hover:bg-emerald-700 text-white font-bold text-xs border border-emerald-500/50 shadow flex items-center gap-1.5 btn-press transition">
+                <span id="iconWatermarkReveal">👁️</span>
+                <span id="textWatermarkReveal">Soi Watermark Ẩn</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. KHỐI GIẢ LẬP TƯƠNG TÁC TIKTOK & CHỌN CHART -->
+        <div class="bg-[#1f120a] border border-[#dfbd74]/60 rounded-xl p-3 shadow-md">
+          <div class="font-bold text-amber-200 flex items-center justify-between border-b border-[#ae854d]/40 pb-1.5 mb-2.5">
+            <span class="flex items-center gap-1.5"><span>💬</span> GIẢ LẬP COMMENT & THẢ TIM TIKTOK</span>
+            <span class="text-[11px] text-stone-400">Tự động nhận diện từ khóa kéo co</span>
+          </div>
+
+          <!-- Thanh thống kê nhanh phiên Live / Test -->
+          <div id="sessionStatsBar" class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2.5 text-[11px]">
+            <div class="bg-stone-950/90 border border-stone-800 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+              <span class="text-stone-400">Xu thật</span>
+              <b id="statSessionCoins" class="text-amber-300 font-mono">0</b>
+            </div>
+            <div class="bg-stone-950/90 border border-stone-800 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+              <span class="text-stone-400">Tim thật</span>
+              <b id="statSessionLikes" class="text-pink-300 font-mono">0</b>
+            </div>
+            <div class="bg-stone-950/90 border border-stone-800 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+              <span class="text-stone-400">Tim test</span>
+              <b id="statSimLikes" class="text-rose-300 font-mono">0</b>
+            </div>
+            <div class="bg-stone-950/90 border border-stone-800 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
+              <span class="text-stone-400">Follower</span>
+              <b id="statSessionFollowers" class="text-emerald-300 font-mono">0</b>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 mb-2">
+            <button class="chat-preset-btn px-2 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700 text-[11px]" data-text="bò cố lên húc bay đỉnh">🐂 "bò cố lên húc bay đỉnh"</button>
+            <button class="chat-preset-btn px-2 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700 text-[11px]" data-text="gấu vả sập đáy rồi">🐻 "gấu vả sập đáy rồi"</button>
+            <button class="chat-preset-btn px-2 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700 text-[11px]" data-text="thắp hương xin về bờ">🕯️ "thắp hương xin về bờ"</button>
+            <button class="chat-preset-btn px-2 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700 text-[11px]" data-text="cắt lỗ gấp thầy ơi">🆘 "cắt lỗ gấp"</button>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <input id="inputChatMsg" type="text" placeholder="Nhập comment như người xem TikTok..." class="flex-1 min-w-[180px] bg-stone-900 border border-stone-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+            <button id="btnSendChat" class="bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold px-3 py-1.5 rounded-lg btn-press transition shrink-0">
+              Gửi Comment
+            </button>
+            <button id="btnSendLikes" class="bg-pink-700 hover:bg-pink-600 text-white font-bold px-3 py-1.5 rounded-lg btn-press transition shrink-0">
+              ❤️ +50 Tim
+            </button>
+            <button id="btnSendBurstLikes" class="bg-gradient-to-r from-pink-600 to-fuchsia-600 hover:from-pink-500 hover:to-fuchsia-500 text-white font-bold px-3 py-1.5 rounded-lg btn-press transition shrink-0">
+              🔥 10×100 Tim (1.000)
+            </button>
+            <button id="btnSendFollow" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-lg btn-press transition shrink-0">
+              🔔 Follow Kênh
+            </button>
+          </div>
+
+          <!-- Nhóm Tặng Quà 7 Mốc Xu TikTok LIVE -->
+          <div class="mt-2.5 pt-2 border-t border-[#ae854d]/30">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] text-amber-300 font-bold flex items-center gap-1">
+                <span>🎁</span> TEST ĐỦ 7 MỐC XU TIKTOK & TIẾP LỰC KÉO CO:
+              </span>
+              <span class="text-[10px] text-stone-400">Quẻ → Nhang → Sen → Hoa Đăng → Mâm → Chuông → Đại Lễ</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button id="btnSendRose" data-coins="1" data-gift="Hoa Hồng" class="gift-tier-btn bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-600/50 font-bold py-1.5 px-2 rounded-lg text-center shadow btn-press transition text-[11px] flex items-center justify-center gap-1">
+                <span>🌹</span> 1 Xu · Quẻ
+              </button>
+              <button data-coins="3" data-gift="Nhang Khấn Lệnh" class="gift-tier-btn bg-amber-950/80 hover:bg-amber-900 text-amber-200 border border-amber-700/60 font-bold py-1.5 px-2 rounded-lg text-center shadow btn-press transition text-[11px] flex items-center justify-center gap-1">
+                <span>🕯️</span> 3 Xu · Nhang
+              </button>
+              <button id="btnSendComboRose" class="bg-gradient-to-r from-rose-700 to-pink-700 hover:from-rose-600 hover:to-pink-600 text-white font-bold py-1.5 px-2 rounded-lg text-center shadow btn-press transition text-[11px] flex items-center justify-center gap-1">
+                <span>💐</span> Combo 5 Bông
+              </button>
+              <button id="btnSendLotusGift" data-coins="5" data-gift="Hoa Sen Chốt Lời" class="gift-tier-btn bg-pink-950/80 hover:bg-pink-900 text-pink-200 border border-pink-600/50 font-bold py-1.5 px-2 rounded-lg text-center shadow btn-press transition text-[11px] flex items-center justify-center gap-1">
+                <span>🌸</span> 5 Xu · Hoa Sen
+              </button>
+              <button data-coins="10" data-gift="Hoa Đăng Rực Sáng" class="gift-tier-btn bg-orange-950/80 hover:bg-orange-900 text-orange-200 border border-orange-600/50 font-bold py-1.5 px-2 rounded-lg text-center shadow btn-press transition text-[11px] flex items-center justify-center gap-1">
+                <span>🏮</span> 10 Xu · Hoa Đăng
+              </button>
+              <button data-coins="30" data-gift="Mâm Lễ Thần Tài" class="gift-tier-btn bg-yellow-950/80 hover:bg-yellow-900 text-yellow-200 border border-yellow-600/50 font-bold py-1.5 px-2 rounded-lg text-center shadow btn-press transition text-[11px] flex items-center justify-center gap-1">
+                <span>🍱</span> 30 Xu · Mâm Lễ
+              </button>
+              <button data-coins="100" data-gift="Chuông Ngân" class="gift-tier-btn bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border border-indigo-500/50 font-bold py-1.5 px-2 rounded-lg text-center shadow btn-press transition text-[11px] flex items-center justify-center gap-1">
+                <span>🔔</span> 100 Xu · Chuông
+              </button>
+              <button id="btnSendGrandGift" data-coins="500" data-gift="Đại Lễ Kim Cương" class="gift-tier-btn bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-stone-950 font-extrabold py-1.5 px-2 rounded-lg text-center shadow btn-press transition text-[11px] flex items-center justify-center gap-1">
+                <span>👑</span> 500 Xu · Đại Lễ
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. KHỐI THÔNG TIN KẾT NỐI & HƯỚNG DẪN TIKTOK -->
+        <div class="bg-stone-900/80 border border-stone-800 rounded-xl p-3 text-[11px] text-stone-400 space-y-1.5">
+          <div class="font-bold text-stone-300 flex items-center gap-1">
+            <span>💡</span> GHI CHÚ KHI TEST VÀ PHÁT LIVE TIKTOK:
+          </div>
+          <p>• <b>Admin & Khách xem đồng bộ 100%:</b> Khi bạn hoặc bạn của bạn bấm bất kỳ nút nào ở cột bên phải, màn hình live bên trái (và tất cả máy đang xem link này) sẽ lập tức phản hồi cùng lúc.</p>
+          <p>• <b>Đưa lên TikTok sau này:</b> Trong phần mềm OBS Studio hoặc TikTok Live Studio, chỉ cần thêm nguồn <b>Browser Source</b> với đường dẫn <code>http://127.0.0.1:3001/overlay</code> (độ phân giải 1080x1920).</p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION LUXURY -->
+  <div id="toastBox" class="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-[#24140d] via-[#381a0e] to-[#24140d] border-2 border-[#dfbd74] text-[#fef08a] px-4 py-2.5 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.9),0_0_25px_rgba(243,210,138,0.35)] text-xs font-bold transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-3 backdrop-blur-md">
+    <div id="toastIconBadge" class="w-8 h-8 rounded-xl bg-amber-950/80 border border-[#dfbd74] flex items-center justify-center text-base shadow-inner shrink-0">
+      <span id="toastIcon">✨</span>
+    </div>
+    <div class="flex flex-col">
+      <span class="text-[9px] text-amber-400/80 tracking-widest font-mono uppercase">HỆ THỐNG ĐỒNG BỘ LIVE</span>
+      <span id="toastMsg" class="text-xs font-bold text-[#fffbeb]">Đã kích hoạt tính năng!</span>
+    </div>
+  </div>
+
+  <script>
+    // --- Layout Switcher ---
+    const panelViewer = document.getElementById('panelViewer');
+    const panelAdmin = document.getElementById('panelAdmin');
+    const viewSplitBtn = document.getElementById('viewSplitBtn');
+    const viewLiveBtn = document.getElementById('viewLiveBtn');
+    const viewAdminBtn = document.getElementById('viewAdminBtn');
+
+    function setActiveTab(btn) {
+      [viewSplitBtn, viewLiveBtn, viewAdminBtn].forEach(b => {
+        b.className = 'px-2.5 py-1 rounded text-stone-300 hover:text-white transition';
+      });
+      btn.className = 'px-2.5 py-1 rounded bg-amber-600 text-white font-bold transition';
+    }
+
+    viewSplitBtn.onclick = () => {
+      setActiveTab(viewSplitBtn);
+      panelViewer.className = 'w-full md:w-[50%] lg:w-[52%] xl:w-[55%] h-full bg-[#080504] border-r-2 border-[#ae854d]/60 flex flex-col relative transition-all duration-300';
+      panelAdmin.className = 'w-full md:w-[50%] lg:w-[48%] xl:w-[45%] h-full bg-[#140c07] flex flex-col overflow-y-auto transition-all duration-300';
+    };
+
+    viewLiveBtn.onclick = () => {
+      setActiveTab(viewLiveBtn);
+      panelViewer.className = 'w-full h-full bg-[#080504] flex flex-col relative transition-all duration-300';
+      panelAdmin.className = 'hidden';
+    };
+
+    viewAdminBtn.onclick = () => {
+      setActiveTab(viewAdminBtn);
+      panelViewer.className = 'hidden';
+      panelAdmin.className = 'w-full h-full bg-[#140c07] flex flex-col overflow-y-auto transition-all duration-300';
+    };
+
+    // --- Audio & Temple Music Master Controller ---
+    const directAudio = document.getElementById('cockpitDirectAudio');
+    const liveOverlayFrame = document.getElementById('liveOverlayFrame');
+    const btnToggleAudio = document.getElementById('btnToggleAudio');
+    const audioIcon = document.getElementById('audioIcon');
+    const audioBtnText = document.getElementById('audioBtnText');
+    const btnViewerUnmute = document.getElementById('btnViewerUnmute');
+    const viewerUnmuteText = document.getElementById('viewerUnmuteText');
+    const cockpitVolumeSlider = document.getElementById('cockpitVolumeSlider');
+    const cockpitVolumeLabel = document.getElementById('cockpitVolumeLabel');
+    const musicPlayingBadge = document.getElementById('musicPlayingBadge');
+    const btnAdminMusicToggle = document.getElementById('btnAdminMusicToggle');
+    const selectCockpitMusic = document.getElementById('selectCockpitMusic');
+    const btnApplyMusicChoice = document.getElementById('btnApplyMusicChoice');
+
+    let isAudioPlaying = false;
+    let hasCockpitAudioUnlocked = false;
+    const recentCockpitSpeechKeys = new Map();
+    function markCockpitSpeech(key) {
+      if (!key) return;
+      recentCockpitSpeechKeys.set(key, Date.now());
+      if (recentCockpitSpeechKeys.size > 60) {
+        const oldest = recentCockpitSpeechKeys.keys().next().value;
+        if (oldest !== undefined) recentCockpitSpeechKeys.delete(oldest);
+      }
+    }
+    function shouldSpeakFromBroadcast(key, cooldownMs = 5000) {
+      if (!key) return true;
+      const at = recentCockpitSpeechKeys.get(key) || 0;
+      return Date.now() - at >= cooldownMs;
+    }
+
+    function muteEmbeddedOverlayPreview() {
+      // Cockpit owns local preview audio (directAudio + cockpitVoice); muting the
+      // embedded overlay iframe prevents overlapping voices and cross-frame cancel races.
+      try {
+        liveOverlayFrame?.contentWindow?.postMessage({ type: 'set-embedded-preview', muted: true }, '*');
+      } catch {}
+    }
+    liveOverlayFrame?.addEventListener('load', muteEmbeddedOverlayPreview);
+
+    function unlockAndPlayAudio() {
+      hasCockpitAudioUnlocked = true;
+      if (typeof cockpitVoice !== 'undefined' && cockpitVoice) {
+        cockpitVoice.unlock();
+      }
+      // 1. Send enable message to iframe overlay, then keep its embedded voice/music muted
+      try {
+        liveOverlayFrame?.contentWindow?.postMessage('enable-audio', '*');
+      } catch {}
+      muteEmbeddedOverlayPreview();
+
+      // 2. Resume web audio context
+      if (testAudioCtx && testAudioCtx.state === 'suspended') {
+        testAudioCtx.resume();
+      }
+
+      // 3. Play direct audio
+      const vol = Number(cockpitVolumeSlider?.value || 50) / 100;
+      if (directAudio) {
+        directAudio.volume = vol;
+        directAudio.play().then(() => {
+          isAudioPlaying = true;
+          updateAudioUI(true);
+          showToast('Đã bật nhạc thiền & âm thanh livestream!', '🔊', 'gold');
+        }).catch(err => {
+          console.warn('Direct audio play:', err);
+          updateAudioUI(false);
+        });
+      }
+    }
+
+    function pauseAudio() {
+      if (directAudio) directAudio.pause();
+      isAudioPlaying = false;
+      updateAudioUI(false);
+      showToast('Đã tạm dừng nhạc thiền.', '🔇', 'gold');
+    }
+
+    function toggleAudio() {
+      if (!directAudio) return;
+      if (directAudio.paused) {
+        unlockAndPlayAudio();
+      } else {
+        pauseAudio();
+      }
+    }
+
+    function updateAudioUI(playing) {
+      if (playing) {
+        if (audioIcon) audioIcon.textContent = '🔊';
+        if (audioBtnText) audioBtnText.textContent = 'Đang Phát Nhạc Thiền';
+        if (btnToggleAudio) btnToggleAudio.className = 'px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md btn-press transition animate-pulse';
+        if (viewerUnmuteText) viewerUnmuteText.textContent = 'Tắt Âm Thanh';
+        if (musicPlayingBadge) {
+          musicPlayingBadge.textContent = '● Đang Phát Nhạc';
+          musicPlayingBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40';
+        }
+      } else {
+        if (audioIcon) audioIcon.textContent = '🔇';
+        if (audioBtnText) audioBtnText.textContent = 'Bật Tiếng & Nhạc Thiền';
+        if (btnToggleAudio) btnToggleAudio.className = 'px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow-md btn-press transition';
+        if (viewerUnmuteText) viewerUnmuteText.textContent = 'Bật Âm Thanh';
+        if (musicPlayingBadge) {
+          musicPlayingBadge.textContent = '○ Đã Tạm Dừng';
+          musicPlayingBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-stone-900 text-stone-400 border border-stone-700/40';
+        }
+      }
+    }
+
+    if (btnToggleAudio) btnToggleAudio.onclick = toggleAudio;
+    if (btnViewerUnmute) btnViewerUnmute.onclick = toggleAudio;
+    if (btnAdminMusicToggle) btnAdminMusicToggle.onclick = toggleAudio;
+
+    if (cockpitVolumeSlider) {
+      cockpitVolumeSlider.oninput = () => {
+        const v = Number(cockpitVolumeSlider.value);
+        if (cockpitVolumeLabel) cockpitVolumeLabel.textContent = v + '%';
+        if (directAudio) directAudio.volume = v / 100;
+        try {
+          liveOverlayFrame?.contentWindow?.postMessage({ type: 'set-volume', volume: v / 100 }, '*');
+        } catch {}
+      };
+    }
+
+    // Auto unlock on first user click anywhere in the window
+    document.addEventListener('click', function onFirstClick() {
+      if (directAudio && directAudio.paused && !isAudioPlaying) {
+        unlockAndPlayAudio();
+      }
+    }, { once: true });
+
+    // Handle sound preview buttons (Mõ, Chuông, Bò Thắng, Gấu Thắng, Còi Sập)
+    function playSynthTone(type) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!testAudioCtx) testAudioCtx = new AudioCtx();
+        if (testAudioCtx.state === 'suspended') testAudioCtx.resume();
+        const now = testAudioCtx.currentTime;
+
+        if (type === 'wood-click') {
+          // Click lệnh / gõ phím: burst noise + bandpass 350Hz
+          const buf = testAudioCtx.createBuffer(1, Math.floor(testAudioCtx.sampleRate * 0.04), testAudioCtx.sampleRate);
+          const d = buf.getChannelData(0);
+          for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (testAudioCtx.sampleRate * 0.008));
+          const src = testAudioCtx.createBufferSource();
+          src.buffer = buf;
+          const filter = testAudioCtx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.value = 380;
+          filter.Q.value = 10;
+          const gain = testAudioCtx.createGain();
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+          src.connect(filter);
+          filter.connect(gain);
+          gain.connect(testAudioCtx.destination);
+          src.start(now);
+        } else if (type === 'bell') {
+          // Chuông khánh
+          const osc1 = testAudioCtx.createOscillator();
+          const osc2 = testAudioCtx.createOscillator();
+          const gain = testAudioCtx.createGain();
+          osc1.frequency.setValueAtTime(659.25, now);
+          osc2.frequency.setValueAtTime(987.77, now);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(testAudioCtx.destination);
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + 1.2);
+          osc2.stop(now + 1.2);
+        } else if (type === 'siren') {
+          // Còi hú quét thanh khoản
+          const osc = testAudioCtx.createOscillator();
+          const gain = testAudioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(450, now);
+          osc.frequency.linearRampToValueAtTime(900, now + 0.35);
+          osc.frequency.linearRampToValueAtTime(450, now + 0.7);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.7);
+          osc.connect(gain);
+          gain.connect(testAudioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.75);
+        } else if (type === 'bull-win') {
+          playToastSound('bull');
+        } else if (type === 'bear-win') {
+          playToastSound('bear');
+        }
+      } catch (e) {}
+    }
+
+    const btnSoundWoodClick = document.getElementById('btnSoundWoodClick');
+    if (btnSoundWoodClick) btnSoundWoodClick.onclick = () => { playSynthTone('wood-click'); showToast('Cạch! (Tiếng Gõ Phím)', '🪵'); };
+    const btnSoundBell = document.getElementById('btnSoundBell');
+    if (btnSoundBell) btnSoundBell.onclick = () => { playSynthTone('bell'); showToast('Ting! (Chuông Chốt Lời)', '🔔'); };
+    const btnSoundBullWin = document.getElementById('btnSoundBullWin');
+    if (btnSoundBullWin) btnSoundBullWin.onclick = () => { playSynthTone('bull-win'); showToast('Bò Thắng!', '🐂', 'bull'); };
+    const btnSoundBearWin = document.getElementById('btnSoundBearWin');
+    if (btnSoundBearWin) btnSoundBearWin.onclick = () => { playSynthTone('bear-win'); showToast('Gấu Thắng!', '🐻', 'bear'); };
+    const btnSoundSiren = document.getElementById('btnSoundSiren');
+    if (btnSoundSiren) btnSoundSiren.onclick = () => { playSynthTone('siren'); showToast('🚨 Còi Hú Quét Nến!', '🚨', 'siren'); };
+
+    // Change music track via Admin API
+    if (btnApplyMusicChoice && selectCockpitMusic) {
+      btnApplyMusicChoice.onclick = async () => {
+        const chosen = selectCockpitMusic.value;
+        if (directAudio) {
+          directAudio.src = '/assets/' + chosen;
+          if (isAudioPlaying) {
+            directAudio.play().catch(() => {});
+          }
+        }
+        try {
+          const stateRes = await fetch('/api/state');
+          const stateData = await stateRes.json();
+          await fetch('/api/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...stateData.config, musicFile: chosen })
+          });
+          showToast('Đã đổi bài nhạc nền trên toàn hệ thống!', '🎵');
+        } catch (err) {
+          showToast('Đã đổi nhạc nền trên máy khách!', '🎵');
+        }
+      };
+    }
+
+    // --- Web Audio Tactile Tone Feedback ---
+    let testAudioCtx = null;
+    function playToastSound(type = 'gold') {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!testAudioCtx) testAudioCtx = new AudioCtx();
+        if (testAudioCtx.state === 'suspended') testAudioCtx.resume();
+        const now = testAudioCtx.currentTime;
+        const osc = testAudioCtx.createOscillator();
+        const gain = testAudioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(testAudioCtx.destination);
+        if (type === 'bull') {
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.12);
+        } else if (type === 'bear' || type === 'siren') {
+          osc.frequency.setValueAtTime(329.63, now);
+          osc.frequency.exponentialRampToValueAtTime(261.63, now + 0.15);
+        } else {
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.exponentialRampToValueAtTime(880.00, now + 0.14);
+        }
+        gain.gain.setValueAtTime(0.07, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } catch (e) {}
+    }
+
+    // --- Toast Notification ---
+    const toastBox = document.getElementById('toastBox');
+    const toastMsg = document.getElementById('toastMsg');
+    const toastIcon = document.getElementById('toastIcon');
+    let toastTimer = null;
+    function showToast(msg, icon = '✨', type = 'gold') {
+      toastMsg.textContent = msg;
+      toastIcon.textContent = icon;
+      if (type === 'bull') {
+        toastBox.style.borderColor = '#10b981';
+        toastBox.style.boxShadow = '0 12px 40px rgba(0,0,0,0.9), 0 0 25px rgba(16,185,129,0.35)';
+      } else if (type === 'bear' || type === 'siren') {
+        toastBox.style.borderColor = '#ef4444';
+        toastBox.style.boxShadow = '0 12px 40px rgba(0,0,0,0.9), 0 0 25px rgba(239,68,68,0.35)';
+      } else {
+        toastBox.style.borderColor = '#dfbd74';
+        toastBox.style.boxShadow = '0 12px 40px rgba(0,0,0,0.9), 0 0 25px rgba(243,210,138,0.35)';
+      }
+      playToastSound(type);
+      toastBox.classList.remove('translate-y-24', 'opacity-0');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toastBox.classList.add('translate-y-24', 'opacity-0');
+      }, 2600);
+    }
+
+    // --- Public URL Share Button ---
+    const btnCopyPublicUrl = document.getElementById('btnCopyPublicUrl');
+    const copyUrlText = document.getElementById('copyUrlText');
+    btnCopyPublicUrl.onclick = async () => {
+      const shareUrl = window.location.href;
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        copyUrlText.textContent = 'Đã Copy Link! 🎉';
+        showToast('Đã copy link test công khai! Gửi ngay cho bạn bè cùng mở test!', '📋', 'gold');
+        setTimeout(() => { copyUrlText.textContent = 'Copy Link Gửi Bạn Bè'; }, 3000);
+      } catch (err) {
+        prompt('Sao chép đường link này để gửi cho bạn bè test:', shareUrl);
+      }
+    };
+
+    // --- API Helper ---
+    async function apiCall(endpoint, method = 'POST', data = {}) {
+      try {
+        const res = await fetch(endpoint, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: method === 'GET' ? undefined : JSON.stringify(data)
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('API error:', e);
+        return { error: e.message };
+      }
+    }
+
+    // --- 1. Kéo Co Bò vs Gấu Actions ---
+    const cockpitTugTime = document.getElementById('cockpitTugTime');
+    const cockpitBullPower = document.getElementById('cockpitBullPower');
+    const cockpitBearPower = document.getElementById('cockpitBearPower');
+
+    // --- Chart Scale & Sharpness Controller ---
+    const sendChartConfig = (type, data) => {
+      try {
+        const frame = document.getElementById('liveOverlayFrame');
+        frame?.contentWindow?.postMessage({ type, ...data }, '*');
+      } catch (e) {}
+    };
+
+    const ratioBtnIds = ['btnChartRatioAuto', 'btnChartRatioCinema', 'btnChartRatioStandard'];
+    const setActiveRatioBtn = (activeId) => {
+      ratioBtnIds.forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.className = id === activeId
+          ? 'bg-amber-600 hover:bg-amber-500 text-stone-950 font-extrabold py-1.5 px-2 rounded text-center shadow btn-press transition text-xs border border-amber-400'
+          : 'bg-stone-900 hover:bg-stone-800 text-amber-200 font-bold py-1.5 px-2 rounded text-center shadow btn-press transition text-xs border border-amber-700/60';
+      });
+    };
+
+    const setActiveZoomBtn = (ultra) => {
+      const btnUltra = document.getElementById('btnChartSharpUltra');
+      const btnNative = document.getElementById('btnChartSharpNative');
+      if (btnUltra) {
+        btnUltra.className = ultra
+          ? 'bg-gradient-to-r from-emerald-700 to-teal-600 hover:from-emerald-600 hover:to-teal-500 text-white font-bold py-1.5 px-2 rounded text-center shadow btn-press transition text-xs border border-emerald-400'
+          : 'bg-stone-900 hover:bg-stone-800 text-stone-300 font-bold py-1.5 px-2 rounded text-center shadow btn-press transition text-xs border border-stone-700';
+      }
+      if (btnNative) {
+        btnNative.className = !ultra
+          ? 'bg-gradient-to-r from-emerald-700 to-teal-600 hover:from-emerald-600 hover:to-teal-500 text-white font-bold py-1.5 px-2 rounded text-center shadow btn-press transition text-xs border border-emerald-400'
+          : 'bg-stone-900 hover:bg-stone-800 text-stone-300 font-bold py-1.5 px-2 rounded text-center shadow btn-press transition text-xs border border-stone-700';
+      }
+    };
+
+    document.getElementById('btnChartRatioAuto')?.addEventListener('click', () => {
+      setActiveRatioBtn('btnChartRatioAuto');
+      sendChartConfig('set-chart-ratio', { ratio: 'auto' });
+      showToast('📐 Đã kích hoạt: Tự động cân chỉnh tỉ lệ nến tối ưu!', '📐', 'gold');
+    });
+    document.getElementById('btnChartRatioCinema')?.addEventListener('click', () => {
+      setActiveRatioBtn('btnChartRatioCinema');
+      sendChartConfig('set-chart-ratio', { ratio: 'cinema' });
+      showToast('🎬 Đã kích hoạt: Mở rộng đại màn chiếu 16:9!', '🎬', 'gold');
+    });
+    document.getElementById('btnChartRatioStandard')?.addEventListener('click', () => {
+      setActiveRatioBtn('btnChartRatioStandard');
+      sendChartConfig('set-chart-ratio', { ratio: 'standard' });
+      showToast('📺 Đã kích hoạt: Tỉ lệ tiêu chuẩn 2:1!', '📺');
+    });
+
+    document.getElementById('btnChartSharpUltra')?.addEventListener('click', () => {
+      setActiveZoomBtn(true);
+      sendChartConfig('set-chart-sharpness', { sharp: true });
+      const badge = document.getElementById('badgeChartSharpStatus');
+      if (badge) {
+        badge.textContent = '● Phóng To Nến (2.25×)';
+        badge.className = 'px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-mono font-bold text-[10px] border border-emerald-500/50';
+      }
+      showToast('✨ Đã bật: Phóng to nến & cỡ chữ (2.25×) dễ nhìn trên điện thoại!', '✨', 'gold');
+    });
+    document.getElementById('btnChartSharpNative')?.addEventListener('click', () => {
+      setActiveZoomBtn(false);
+      sendChartConfig('set-chart-sharpness', { sharp: false });
+      const badge = document.getElementById('badgeChartSharpStatus');
+      if (badge) {
+        badge.textContent = '● Phóng Vừa (1.75×)';
+        badge.className = 'px-2 py-0.5 rounded bg-stone-900 text-stone-300 font-mono font-bold text-[10px] border border-stone-600';
+      }
+      showToast('🔎 Đã chuyển về mức phóng vừa (1.75×)', '🔎');
+    });
+
+    document.querySelectorAll('.chart-tf-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tf = btn.dataset.tf;
+        document.querySelectorAll('.chart-tf-btn').forEach(b => {
+          b.className = 'chart-tf-btn px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-amber-200 border border-amber-800/60 font-bold text-xs';
+        });
+        btn.className = 'chart-tf-btn px-2 py-0.5 rounded bg-amber-600 text-stone-950 font-extrabold text-xs';
+        sendChartConfig('set-chart-timeframe', { tf });
+        showToast(`⏱️ Đã chuyển khung thời gian nến sang ${tf} phút!`, '⏱️', 'gold');
+      });
+    });
+
+    document.getElementById('btnTugStart').onclick = async () => {
+      await apiCall('/api/viral/tug/control', 'POST', { command: 'start', durationSec: 90 });
+      showToast('Đã bắt đầu hiệp Kéo Co Bò vs Gấu (90s)!', '⚔️', 'gold');
+    };
+
+    document.getElementById('btnTugBullPull').onclick = async () => {
+      await apiCall('/api/viral/tug/action', 'POST', { side: 'bull', power: 50, nickname: 'Admin' });
+      showToast('Thánh Bò húc mạnh +50kg!', '🐂', 'bull');
+    };
+
+    document.getElementById('btnTugBearPull').onclick = async () => {
+      await apiCall('/api/viral/tug/action', 'POST', { side: 'bear', power: 50, nickname: 'Admin' });
+      showToast('Cụ Gấu vả mạnh +50kg!', '🐻', 'bear');
+    };
+
+    document.getElementById('btnTugReset').onclick = async () => {
+      await apiCall('/api/viral/tug/control', 'POST', { command: 'reset' });
+      showToast('Đã reset lại hiệp kéo co!', '🔄', 'gold');
+    };
+
+    // --- 2. Vòng Xoay & Còi Thanh Lý ---
+    document.getElementById('btnSpinWheel').onclick = async () => {
+      showToast('Đang quay Vòng Xoay Luân Hồi...', '🎰', 'gold');
+      await apiCall('/api/viral/wheel/spin', 'POST', { nickname: 'Trader VIP' });
+    };
+
+    document.getElementById('btnTriggerSiren').onclick = async () => {
+      showToast('ĐÃ RUNG CÒI BÁO THANH LÝ! CÁ MẬP ĐANG QUÉT ĐÁY!', '🚨', 'siren');
+      await apiCall('/api/viral/siren/trigger', 'POST', { durationMs: 15000 });
+    };
+
+    // --- 3. Tâm Linh Gồng Lệnh & Bơm Nến ---
+    document.getElementById('btnIncenseRitual').onclick = async () => {
+      showToast('Đã thắp nhang gồng lệnh! Nến Vàng đang dựng cột!', '🕯️', 'gold');
+      // Use the live ritual queue (not the score-only action API) so the guest
+      // overlay always receives a full character-and-particles performance.
+      await apiCall('/api/simulate', 'POST', { scenario: 'ritual', action: 'incense', nickname: 'Host Trader' });
+    };
+
+    document.getElementById('btnLotusRitual').onclick = async () => {
+      showToast('Đã dâng sen chốt lời! Tiếp thêm sinh khí cho Bò!', '🌸', 'bull');
+      await apiCall('/api/simulate', 'POST', { scenario: 'ritual', action: 'lotus', nickname: 'Host Trader' });
+    };
+
+    document.getElementById('btnPrayerRitual').onclick = async () => {
+      showToast('Đã thả đèn hoa đăng cầu bình an về bờ!', '🏮', 'gold');
+      await apiCall('/api/simulate', 'POST', { scenario: 'ritual', action: 'prayer', nickname: 'Host Trader' });
+    };
+
+    document.getElementById('btnFortuneRitual').onclick = async () => {
+      showToast('Đang lắc ống xăm bói quẻ nến...', '🪙', 'gold');
+      await apiCall('/api/simulate', 'POST', { scenario: 'ritual', action: 'fortune', nickname: 'Host Trader' });
+    };
+
+    // --- 4. Chào Trader & Bắn Tin Nóng & Giáo Sư Cún ---
+    document.querySelectorAll('.news-preset-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.getElementById('inputNewsText').value = btn.getAttribute('data-news');
+      };
+    });
+
+    const profDogList = [
+      'GS. Cún: Jesse Livermore dạy: Tiền kiếm được là nhờ kiên nhẫn ngồi yên chờ đợi, chứ không phải cào phím mỗi phút! 🧘‍♂️',
+      'GS. Cún: CZ Binance dặn: If you cannot hold, you will not be rich! Không gồng được thì đừng mơ làm đại gia! 💎',
+      'GS. Cún: Jesse Livermore bảo: Đừng bao giờ cãi nhau với bảng nến! Thị trường không bao giờ sai, chỉ có trò là sai! 📉',
+      'GS. Cún: CZ dặn con số 4 thần thánh: Bỏ ngoài tai mọi FUD và tiếng ồn, tập trung soi chart và bảo vệ tài khoản! 4️⃣',
+      'GS. Cún: George Soros dạy: Đúng hay sai không quan trọng, quan trọng là lúc đúng ăn bao nhiêu pip, lúc sai mất bao nhiêu! 🎯',
+      'GS. Cún: Paul Tudor Jones bảo: Losers average losers! Gồng lỗ là dở rồi, lại còn nhồi thêm lệnh là chuẩn bị ra đảo! 🏝️',
+      'GS. Cún: Warren Buffett dạy: Nguyên tắc 1 là không để cháy tài khoản, nguyên tắc 2 là xem lại nguyên tắc 1! 📜',
+      'GS. Cún: Satoshi Nakamoto nhắn: Nếu anh em không hiểu hoặc không tin, tôi không có thời gian để giải thích đâu! ⚡',
+      'GS. Cún: Mark Minervini dạy: Thà cắt lỗ nhỏ như muỗi cắn mười pip, còn hơn để cá mập cắn đứt cả tài khoản! 🛡️',
+      'GS. Cún: Jesse Livermore dạy: Kẻ thù lớn nhất của trader nằm ở trong chính bản thân họ: lòng tham và nỗi sợ hãi! 🪞',
+      'GS. Cún: Thầy bảo nến búa rút chân, trò lại tưởng búa đập vỡ tài khoản! 🔨',
+      'GS. Cún: Sóng Elliot đếm 1-2-3-4-5, đếm xong tiền trong ví thấy về số 0! 🌊',
+      'GS. Cún: Phân kỳ RSI ba đoạn rõ mồn một, mà trò vẫn cố cãi thầy nhồi lệnh! 📉',
+      'GS. Cún: Cản MA200 cứng như bàn thạch, đâm đầu vào chỉ có mẻ nón lá thôi! 📐',
+      'GS. Cún: Vừa thấy nến xanh tưởng Bull Run, ai ngờ trúng bẫy Bull Trap của cá mập! 🐂🪤',
+      'GS. Cún: Bẫy Bear Trap kinh điển: dụ anh em bán tháo rồi phi tên lửa thẳng lên mây! 🐻🪤',
+      'GS. Cún: Cắt lỗ ngay đáy chuẩn sách giáo khoa, vừa buông tay là nến dựng cột! ✂️',
+      'GS. Cún: Chốt non 0.5 pip ăn bát mì tôm, nhìn nến chạy tiếp 100 pip mà rớt nước mắt! 🍜',
+      'GS. Cún: Gồng lỗ bất tử - bí kíp chân truyền từ đời cụ tổ truyền lại cho trò à? 🛡️',
+      'GS. Cún: Thước kẻ của thầy đo sóng chuẩn từng pip, chỉ có trò là đo nhầm lòng tham! 📏',
+      'GS. Cún: Mô hình Vai - Đầu - Vai, hay là mô hình bay màu cả gia tài? 👨‍🏫',
+      'GS. Cún: Fibonacci thoái lui 61.8%, nhưng ví tiền của trò thoái lui 99%! 🌀',
+      'GS. Cún: Nến Doji bia mộ dựng ngay đỉnh, không chạy thì đợi ai cứu hả các ông? 🪦',
+      'GS. Cún: Quản lý vốn là gì? Là đừng để thầy phải đi mua mì tôm cứu trợ anh em! 🍜',
+      'GS. Cún: Kháng cự sinh ra để phá, nhưng tài khoản sinh ra không phải để cháy! ⚠️',
+      'GS. Cún: Trò bảo phân tích đa khung thời gian: 1 phút cháy, 5 phút khóc, 1 giờ ra đê! 🕒',
+      'GS. Cún: Nến Marubozu đặc ruột thế kia mà dám nhảy vào chặn đầu xe lửa! 🚂',
+      'GS. Cún: MACD cắt xuống từ đỉnh Everest rồi, buông tay đi cho nhẹ đầu anh em ơi! ✂️',
+      'GS. Cún: Bắt dao rơi đứt tay, bắt nến rơi thì đứt luôn cả sợi dây mạng! 🗡️',
+      'GS. Cún: Thầy dạy "xu hướng là bạn", trò lại coi cá mập là người yêu cũ! 🦈',
+      'GS. Cún: Đặt Stop-loss 10 pip thì sợ dính, gồng lỗ 300 pip thì can đảm phi thường! 🦁',
+      'GS. Cún: Bollinger Band thắt cổ chai, sắp có bão tố cấp 15 quét sạch hai đầu! 🌪️',
+      'GS. Cún: Ông nào nhồi lệnh Martingale đấy? Ra góc phòng úp mặt vào tường kiểm điểm mau! 🙇',
+      'GS. Cún: Mây Ichimoku dày đặc sương mù, tâm trò cũng mịt mờ như tương lai lệnh Buy! ☁️',
+      'GS. Cún: Học trò ruột của thầy là phải nhớ: Thà chốt non còn hơn lau nước mắt! 🚀',
+      'GS. Cún: Cây Pinbar dài ngoằng như gậy Như Ý, quét râu xong đi về nơi xa lắm! 🪄',
+      'GS. Cún: Giao dịch không kỷ luật thì thần may mắn cũng phải lắc đầu ngao ngán! ⚠️',
+      'GS. Cún: Vừa mở mắt thấy Gap nhảy 50 pip, tim đập nhanh hơn nhịp sóng Elliot! 💓',
+      'GS. Cún: Trò bảo "Lần này sẽ khác", đúng rồi, lần này cháy nhanh gấp đôi lần trước! 💸',
+      'GS. Cún: Nến rút chân thần thánh! May quá cá mập vừa nhả cho một nhịp hồi! 🚀'
+    ];
+    let liveTestDogIdx = 0;
+
+    function applyDogQuote(quote) {
+      document.getElementById('currentDogQuoteDisplay').textContent = quote;
+      try {
+        const overlayDoc = document.getElementById('liveOverlayFrame')?.contentDocument;
+        const sp = overlayDoc?.getElementById('tvChibiDogSpeech');
+        if (sp) sp.textContent = quote;
+      } catch (e) {}
+    }
+
+    document.querySelectorAll('.dog-preset-btn').forEach(btn => {
+      btn.onclick = () => {
+        const q = btn.getAttribute('data-quote');
+        applyDogQuote(q);
+        showToast('Giáo Sư Cún đã phán trên live!', '🐕');
+      };
+    });
+
+    document.getElementById('btnNextDogQuote').onclick = () => {
+      liveTestDogIdx = (liveTestDogIdx + 1) % profDogList.length;
+      const q = profDogList[liveTestDogIdx];
+      applyDogQuote(q);
+      showToast('Đã đổi lời giảng Giáo Sư Cún!', '🎓');
+    };
+
+    document.querySelectorAll('.name-preset-btn').forEach(btn => {
+      btn.onclick = () => {
+        const n = btn.getAttribute('data-name');
+        document.getElementById('inputTraderName').value = n;
+      };
+    });
+
+    document.getElementById('btnWelcomeTrader').onclick = async () => {
+      const name = document.getElementById('inputTraderName').value.trim() || 'Minh An';
+      showToast(`Đã chào đón ${name} vào Xóm Trade!`, '👋');
+      await apiCall('/api/simulate', 'POST', { scenario: 'join', nickname: name });
+    };
+
+    document.getElementById('btnBroadcastNews').onclick = async () => {
+      const headline = document.getElementById('inputNewsText').value.trim() || 'TIN NÓNG PHỐ WALL';
+      showToast('Đã bắn tin nóng đỏ rực lên màn hình!', '⚡');
+      await apiCall('/api/viral/news/flash', 'POST', { headline, durationMs: 7000 });
+    };
+
+    const btnFollowTrader = document.getElementById('btnFollowTrader');
+    if (btnFollowTrader) {
+      btnFollowTrader.onclick = async () => {
+        const name = document.getElementById('inputTraderName').value.trim() || 'Mai Hoa';
+        hasCockpitAudioUnlocked = true;
+        markCockpitSpeech(`follow:${name}`);
+        showToast(`⭐ ${name} vừa nhấn Follow kênh! Chúc gồng lệnh tất thắng!`, '⭐', 'gold');
+        if (cockpitVoice) {
+          cockpitVoice.unlock();
+          cockpitVoice.speakFollow(name, true);
+        }
+        await apiCall('/api/simulate', 'POST', { scenario: 'follow', nickname: name });
+      };
+    }
+
+    const btnLike1000Trader = document.getElementById('btnLike1000Trader');
+    if (btnLike1000Trader) {
+      btnLike1000Trader.onclick = async () => {
+        const name = document.getElementById('inputTraderName').value.trim() || 'Đại Gia Bull';
+        hasCockpitAudioUnlocked = true;
+        markCockpitSpeech(`likes:${name}`);
+        showToast(`💖 ${name} vừa thả 1.000 Tim! Đang kích hoạt tri ân rực rỡ!`, '💖', 'gold');
+        if (cockpitVoice && cockpitVoice.speakThousandLikes) {
+          cockpitVoice.unlock();
+          cockpitVoice.speakThousandLikes(name, 1000);
+        }
+        await apiCall('/api/simulate', 'POST', { scenario: 'like', nickname: name, count: 1000 });
+      };
+    }
+
+    // --- 4C. HỆ THỐNG GIỌNG NÓI THÔNG MINH & XƯỚNG TÊN (VIETNAMESE TTS CONTROLLER) ---
+    const ttsStatusBadge = document.getElementById('ttsStatusBadge');
+    const ttsWaveform = document.getElementById('ttsWaveform');
+    const ttsCurrentVoiceLabel = document.getElementById('ttsCurrentVoiceLabel');
+    const ttsCurrentTextDisplay = document.getElementById('ttsCurrentTextDisplay');
+    const ttsQueueBadge = document.getElementById('ttsQueueBadge');
+    const selectVoiceProfile = document.getElementById('selectVoiceProfile');
+    const selectBrowserVoiceList = document.getElementById('selectBrowserVoiceList');
+    const ttsRateSlider = document.getElementById('ttsRateSlider');
+    const ttsRateBadge = document.getElementById('ttsRateBadge');
+    const ttsPitchSlider = document.getElementById('ttsPitchSlider');
+    const ttsPitchBadge = document.getElementById('ttsPitchBadge');
+    const ttsVolumeSlider = document.getElementById('ttsVolumeSlider');
+    const ttsVolumeBadge = document.getElementById('ttsVolumeBadge');
+    const checkSyncOverlayTts = document.getElementById('checkSyncOverlayTts');
+    const btnStopTts = document.getElementById('btnStopTts');
+    const btnToggleMasterTts = document.getElementById('btnToggleMasterTts');
+
+    let cockpitVoice = null;
+    let masterTtsEnabled = true;
+
+    function updateVoiceCockpitUI(st) {
+      if (!st) return;
+      if (st.isSpeaking) {
+        ttsStatusBadge.textContent = '🔊 Đang Xướng Giọng';
+        ttsStatusBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-900 text-amber-200 border border-amber-500/60 animate-pulse';
+        ttsWaveform?.classList.remove('hidden');
+        ttsWaveform?.classList.add('flex');
+        if (st.currentText) {
+          ttsCurrentTextDisplay.textContent = `"${st.currentText}"`;
+          ttsCurrentTextDisplay.className = 'text-[#fef08a] italic truncate font-sans font-medium';
+        }
+      } else {
+        ttsStatusBadge.textContent = st.enabled ? '● Sẵn Sàng' : '○ Đã Tắt';
+        ttsStatusBadge.className = st.enabled
+          ? 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40'
+          : 'text-[10px] font-mono px-2 py-0.5 rounded bg-stone-900 text-stone-400 border border-stone-700/40';
+        ttsWaveform?.classList.add('hidden');
+        ttsWaveform?.classList.remove('flex');
+      }
+
+      if (st.voiceName) {
+        ttsCurrentVoiceLabel.textContent = st.voiceName;
+      }
+      if (ttsQueueBadge) {
+        ttsQueueBadge.textContent = `Hàng đợi: ${st.queueLength || 0}`;
+      }
+    }
+
+    function populateBrowserVoices() {
+      if (typeof window === 'undefined' || !window.speechSynthesis) return;
+      const voices = window.speechSynthesis.getVoices() || [];
+      if (!voices.length) return;
+
+      selectBrowserVoiceList.innerHTML = '';
+      // Group Vietnamese voices first, prioritizing the sweet initial voice Hoài My
+      const viVoices = voices.filter(v => (v.lang || '').toLowerCase().includes('vi') || (v.name || '').toLowerCase().includes('viet'));
+      viVoices.sort((a, b) => {
+        const aN = a.name.toLowerCase();
+        const bN = b.name.toLowerCase();
+        const aScore = aN.includes('hoaimy') ? 10 : aN.includes('google') ? 8 : aN.includes('natural') ? 6 : 1;
+        const bScore = bN.includes('hoaimy') ? 10 : bN.includes('google') ? 8 : bN.includes('natural') ? 6 : 1;
+        return bScore - aScore;
+      });
+      const otherVoices = voices.filter(v => !viVoices.includes(v));
+
+      if (viVoices.length > 0) {
+        const viGroup = document.createElement('optgroup');
+        viGroup.label = '🇻🇳 Giọng Đọc Chuẩn (Hoài My / Google Tiếng Việt)';
+        viVoices.forEach((v, idx) => {
+          const opt = document.createElement('option');
+          opt.value = v.name;
+          opt.textContent = `${v.name} (${v.lang})`;
+          if (idx === 0) opt.selected = true;
+          viGroup.appendChild(opt);
+        });
+        selectBrowserVoiceList.appendChild(viGroup);
+      }
+
+      const allGroup = document.createElement('optgroup');
+      allGroup.label = '🌐 Giọng Hệ Thống Khác';
+      otherVoices.slice(0, 15).forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.name;
+        opt.textContent = `${v.name} (${v.lang})`;
+        allGroup.appendChild(opt);
+      });
+      selectBrowserVoiceList.appendChild(allGroup);
+
+      if (cockpitVoice) {
+        const currentVoiceName = cockpitVoice.getState().voiceName;
+        if (currentVoiceName) ttsCurrentVoiceLabel.textContent = currentVoiceName;
+      }
+    }
+
+    // Initialize Cockpit Voice Engine
+    function bindCockpitVoice(factory) {
+      cockpitVoice = factory({
+        onDucking: isDucked => {
+          if (directAudio) {
+            const baseV = Number(cockpitVolumeSlider?.value || 35) / 100;
+            directAudio.volume = isDucked ? baseV * 0.25 : baseV;
+          }
+        },
+        onStateChange: updateVoiceCockpitUI,
+        enabled: masterTtsEnabled
+      });
+      if (selectVoiceEngine && typeof cockpitVoice.setEngine === 'function') {
+        cockpitVoice.setEngine(selectVoiceEngine.value);
+      }
+      if (selectVoiceProfile) cockpitVoice.setVoiceMode(selectVoiceProfile.value);
+      if (ttsRateSlider) cockpitVoice.setRate(Number(ttsRateSlider.value));
+      if (ttsPitchSlider) cockpitVoice.setPitch(Number(ttsPitchSlider.value));
+      if (ttsVolumeSlider) cockpitVoice.setVolume(Number(ttsVolumeSlider.value) / 100);
+      populateBrowserVoices();
+    }
+
+    function setupCockpitVoice() {
+      if (window.createVoiceEngine) {
+        bindCockpitVoice(window.createVoiceEngine);
+      }
+      // Always pull the versioned module so cached browsers get the latest engine immediately.
+      import('/js/voice-engine.js?v=voice-queue-v3.6').then(mod => {
+        window.createVoiceEngine = mod.createVoiceEngine;
+        const st = cockpitVoice?.getState?.();
+        if (!cockpitVoice || (!st?.isSpeaking && (st?.queueLength || 0) === 0)) {
+          bindCockpitVoice(mod.createVoiceEngine);
+        }
+      }).catch(err => console.warn('Could not load voice-engine:', err));
+    }
+
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = populateBrowserVoices;
+      }
+    }
+    setupCockpitVoice();
+
+    // Tuning controls event listeners
+    const selectVoiceEngine = document.getElementById('selectVoiceEngine');
+    if (selectVoiceEngine) {
+      selectVoiceEngine.onchange = () => {
+        const eng = selectVoiceEngine.value;
+        if (cockpitVoice && typeof cockpitVoice.setEngine === 'function') {
+          cockpitVoice.setEngine(eng);
+        }
+        showToast(`Đã chuyển động cơ TTS: ${eng === 'neural' ? 'Microsoft Edge Neural (Mượt Chuẩn Hà Nội)' : 'Trình Duyệt Web Speech'}`, '⚡');
+      };
+    }
+
+    if (selectVoiceProfile) {
+      selectVoiceProfile.onchange = () => {
+        if (cockpitVoice) cockpitVoice.setVoiceMode(selectVoiceProfile.value);
+        showToast(`Đã chọn cấu hình giọng: ${selectVoiceProfile.options[selectVoiceProfile.selectedIndex].text}`, '🎭');
+      };
+    }
+
+    if (selectBrowserVoiceList) {
+      selectBrowserVoiceList.onchange = () => {
+        const selectedName = selectBrowserVoiceList.value;
+        const voices = window.speechSynthesis?.getVoices() || [];
+        const found = voices.find(v => v.name === selectedName);
+        if (found) {
+          if (cockpitVoice && typeof cockpitVoice.setVoiceByName === 'function') {
+            cockpitVoice.setVoiceByName(found.name);
+          }
+          const liveFrame = document.getElementById('liveOverlayFrame');
+          liveFrame?.contentWindow?.postMessage({
+            type: 'set-voice-name',
+            name: found.name
+          }, '*');
+          showToast(`Đã chọn giọng: ${found.name}`, '🎤');
+          ttsCurrentVoiceLabel.textContent = `${found.name} (${found.lang})`;
+        }
+      };
+    }
+
+    if (ttsRateSlider) {
+      ttsRateSlider.oninput = () => {
+        const r = Number(ttsRateSlider.value);
+        ttsRateBadge.textContent = r.toFixed(2) + 'x';
+        if (cockpitVoice) cockpitVoice.setRate(r);
+      };
+    }
+
+    if (ttsPitchSlider) {
+      ttsPitchSlider.oninput = () => {
+        const p = Number(ttsPitchSlider.value);
+        ttsPitchBadge.textContent = p.toFixed(2) + 'x';
+        if (cockpitVoice) cockpitVoice.setPitch(p);
+      };
+    }
+
+    if (ttsVolumeSlider) {
+      ttsVolumeSlider.oninput = () => {
+        const v = Number(ttsVolumeSlider.value);
+        ttsVolumeBadge.textContent = v + '%';
+        if (cockpitVoice) cockpitVoice.setVolume(v / 100);
+      };
+    }
+
+    if (btnToggleMasterTts) {
+      btnToggleMasterTts.onclick = () => {
+        masterTtsEnabled = !masterTtsEnabled;
+        if (cockpitVoice) cockpitVoice.setEnabled(masterTtsEnabled);
+        if (masterTtsEnabled) {
+          btnToggleMasterTts.className = 'px-3 py-1 rounded bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-[11px] shadow transition';
+          btnToggleMasterTts.textContent = '🔊 TTS: ĐANG BẬT';
+          showToast('Đã BẬT hệ thống Giọng Nói Thông Minh!', '🔊', 'gold');
+        } else {
+          btnToggleMasterTts.className = 'px-3 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-300 font-bold text-[11px] shadow transition';
+          btnToggleMasterTts.textContent = '🔇 TTS: ĐÃ TẮT';
+          showToast('Đã TẮT hệ thống Giọng Nói.', '🔇');
+        }
+      };
+    }
+
+    if (btnStopTts) {
+      btnStopTts.onclick = () => {
+        if (cockpitVoice) cockpitVoice.stop();
+        showToast('Đã dừng giọng đọc và xóa hàng đợi.', '⏹️');
+      };
+    }
+
+    // 1-Click Interactive TTS Action Buttons
+    async function triggerVoiceEvent(category, data = {}) {
+      hasCockpitAudioUnlocked = true;
+      if (!cockpitVoice) setupCockpitVoice();
+      if (cockpitVoice) cockpitVoice.unlock();
+
+      // Local Speech in Cockpit for immediate streamer feedback
+      if (cockpitVoice) {
+        if (category === 'welcome') cockpitVoice.speakWelcome(data.nickname, true);
+        else if (category === 'follow') cockpitVoice.speakFollow(data.nickname, true);
+        else if (category === 'rose' || category === 'gift') cockpitVoice.speakGift(data.nickname, data.giftName || 'Hoa Hồng', data.count || 1);
+        else if (category === 'grand') cockpitVoice.speakGift(data.nickname, 'Đại Lễ 500 Xu', 1);
+        else if (category === 'dog') cockpitVoice.speakDog(data.quote);
+        else if (category === 'fortune') cockpitVoice.speakFortune();
+      }
+
+      // Sync to remote live overlay clients (OBS) via WebSocket if enabled
+      if (checkSyncOverlayTts && checkSyncOverlayTts.checked) {
+        try {
+          // Broadcast via backend API so remote OBS viewers hear speech
+          if (category === 'dog' || category === 'fortune') {
+            await apiCall('/api/voice/speak', 'POST', { category, quote: data.quote, nickname: data.nickname });
+          }
+        } catch (e) {}
+      }
+    }
+
+    document.getElementById('btnVoiceTestWelcome').onclick = async () => {
+      const name = document.getElementById('inputTraderName')?.value.trim() || 'Nam Khánh';
+      showToast(`🗣️ Đang xướng giọng: "Chào mừng ${name} kéo ghế vào Xóm Trade gồng lệnh!"`, '🗣️', 'gold');
+      await triggerVoiceEvent('welcome', { nickname: name });
+      try {
+        const liveFrame = document.getElementById('liveOverlayFrame');
+        liveFrame?.contentWindow?.postMessage({
+          type: 'trigger-trader-walk-in',
+          nickname: name,
+          actionText: 'Kéo ghế vào Xóm Trade · Chuẩn bị vào lệnh',
+          wish: 'Chúc anh em gồng lệnh xanh mướt!'
+        }, '*');
+      } catch (e) {}
+      await apiCall('/api/simulate', 'POST', { scenario: 'join', nickname: name });
+    };
+
+    document.getElementById('btnVoiceTestFollow').onclick = async () => {
+      const name = document.getElementById('inputTraderName')?.value.trim() || 'Mai Hoa';
+      hasCockpitAudioUnlocked = true;
+      markCockpitSpeech(`follow:${name}`);
+      showToast(`🔔 Đang xướng giọng: "Cảm ơn ${name} đã nhấn theo dõi kênh!"`, '🔔', 'gold');
+      await triggerVoiceEvent('follow', { nickname: name });
+      await apiCall('/api/simulate', 'POST', { scenario: 'follow', nickname: name });
+    };
+
+    document.getElementById('btnVoiceTestRose').onclick = async () => {
+      const name = document.getElementById('inputTraderName')?.value.trim() || 'Chiến Thần Long';
+      showToast(`🌹 Đang xướng giọng: "Tri ân ${name} dâng 5 đóa hoa hồng!"`, '🌹', 'gold');
+      await triggerVoiceEvent('rose', { nickname: name, giftName: 'Hoa Hồng', count: 5 });
+      await apiCall('/api/simulate', 'POST', { scenario: 'combo', nickname: name });
+    };
+
+    document.getElementById('btnVoiceTestGrand').onclick = async () => {
+      const name = document.getElementById('inputTraderName')?.value.trim() || 'Chủ Tịch Quỹ';
+      showToast(`👑 Đang xướng giọng: "Cả Xóm Trade cảm ơn ${name} tặng Quà Khủng 500 xu!"`, '👑', 'gold');
+      await triggerVoiceEvent('grand', { nickname: name, giftName: 'Quà Khủng 500 Xu', count: 1 });
+      await apiCall('/api/simulate', 'POST', { scenario: 'grand', nickname: name });
+    };
+
+    document.getElementById('btnVoiceTestDog').onclick = async () => {
+      const currentQuote = document.getElementById('currentDogQuoteDisplay')?.textContent.trim() || profDogList[0];
+      showToast('🐕 Giáo Sư Cún đang phân tích kỹ thuật bằng giọng nói!', '🐕', 'gold');
+      await triggerVoiceEvent('dog', { quote: currentQuote });
+    };
+
+    document.getElementById('btnVoiceTestFortune').onclick = async () => {
+      showToast('📜 Đang xướng đọc lời dạy huyền thoại Jesse Livermore & CZ!', '📜', 'gold');
+      await triggerVoiceEvent('fortune');
+    };
+
+    const btnVoiceThousandLikes = document.getElementById('btnVoiceTestThousandLikes');
+    if (btnVoiceThousandLikes) {
+      btnVoiceThousandLikes.onclick = async () => {
+        const name = document.getElementById('inputTraderName')?.value.trim() || 'Đại Gia Bull';
+        hasCockpitAudioUnlocked = true;
+        markCockpitSpeech(`likes:${name}`);
+        showToast(`💖 Đang xướng giọng: Tri ân ${name} thả 1.000 tim!`, '💖', 'gold');
+        if (cockpitVoice && cockpitVoice.speakThousandLikes) {
+          cockpitVoice.unlock();
+          cockpitVoice.speakThousandLikes(name, 1200);
+        }
+        await apiCall('/api/simulate', 'POST', { scenario: 'like', nickname: name, count: 1200 });
+      };
+    }
+
+    // --- 4C. TIỂU PHẨM HÀI XÓM TRADE & TUYÊN BỐ HUYỀN THOẠI CONTROLLER ---
+    const triggerComedy = async (scenario, label) => {
+      showToast(`🎬 Kích hoạt: ${label}`, '🧹', 'gold');
+      if (cockpitVoice) {
+        cockpitVoice.unlock();
+        if (scenario === 'wife_chase') {
+          cockpitVoice.speakComedyDialogue('Ông xách ngay cái vali ra khỏi nhà cho tôi! Đã dặn đặt stop loss ở cản cứng rồi mà còn cố gồng lỗ x100!', { voiceMode: 'female' });
+        } else if (scenario === 'chicken_dog') {
+          cockpitVoice.speakComedyDialogue('Nến đỏ rơi thẳng đứng cọc cạch cọc cạch, gà bay chó sủa chạy tán loạn cả làng cả xóm!', { voiceMode: 'female' });
+        } else if (scenario === 'tea_debt') {
+          cockpitVoice.speakComedyDialogue('Bác ơi, 3 ấm trà đá với 2 bao thuốc lào gồng lỗ từ hôm qua tới giờ chưa thanh toán đâu đấy nhé!', { voiceMode: 'female' });
+        } else if (scenario === 'modem_rescue') {
+          cockpitVoice.speakComedyDialogue('Bác hàng xóm ơi cứu mạng, rút giùm cháu cái phích modem để cá mập khỏi quét stop loss!', { voiceMode: 'male' });
+        }
+      }
+      try {
+        const liveFrame = document.getElementById('liveOverlayFrame');
+        liveFrame?.contentWindow?.postMessage({
+          type: 'trigger-street-comedy',
+          scenario
+        }, '*');
+      } catch (e) {}
+      await apiCall('/api/viral/comedy/trigger', 'POST', { scenario });
+    };
+
+    document.getElementById('btnTriggerComedyWife')?.addEventListener('click', () => {
+      triggerComedy('wife_chase', 'Vợ Đuổi Chồng Trade Thua');
+    });
+    document.getElementById('btnTriggerComedyChicken')?.addEventListener('click', () => {
+      triggerComedy('chicken_dog', 'Gà Chó Bay Cục Tác');
+    });
+    document.getElementById('btnTriggerComedyTea')?.addEventListener('click', () => {
+      triggerComedy('tea_debt', 'Quán Nước Đòi Nợ');
+    });
+    document.getElementById('btnTriggerComedyModem')?.addEventListener('click', () => {
+      triggerComedy('modem_rescue', 'Rút Phích Modem Wi-Fi');
+    });
+
+    const proclaimLegend = async (author, title, quote, badge, label) => {
+      showToast(`🏛️ Tuyên Bố: ${label}`, badge, 'gold');
+      if (cockpitVoice) {
+        cockpitVoice.unlock();
+        cockpitVoice.speakTraderLegend({ author, text: quote });
+      }
+      try {
+        const liveFrame = document.getElementById('liveOverlayFrame');
+        liveFrame?.contentWindow?.postMessage({
+          type: 'trigger-legend-proclamation',
+          legend: { author, title, quote, badge }
+        }, '*');
+      } catch (e) {}
+      await apiCall('/api/viral/legend/proclaim', 'POST', { author, title, quote, badge });
+    };
+
+    document.getElementById('btnLegendCZ')?.addEventListener('click', () => {
+      proclaimLegend(
+        'CZ Binance',
+        'Đồng sáng lập & Cựu CEO Binance',
+        'If you cannot hold, you will not be rich! Nếu các vị không có bản lĩnh gồng lệnh qua giông bão, đừng bao giờ mơ mộng chạm tay vào đỉnh cao tài chính! Hãy ghi nhớ quy tắc số 4: Bỏ ngoài tai mọi FUD và bảo vệ tài khoản!',
+        '💎',
+        'CZ Binance'
+      );
+    });
+    document.getElementById('btnLegendLivermore')?.addEventListener('click', () => {
+      proclaimLegend(
+        'Jesse Livermore',
+        'Huyền thoại Phố Wall · Đại hiệp Đầu cơ',
+        'Tiền kiếm được trên thị trường tài chính là nhờ vào sự kiên nhẫn ngồi yên chờ đợi thời cơ, chứ tuyệt đối không phải do cào phím mỗi phút mỗi giây! Đừng bao giờ tranh cãi với bảng giá, thị trường không bao giờ sai!',
+        '📜',
+        'Jesse Livermore'
+      );
+    });
+    document.getElementById('btnLegendSoros')?.addEventListener('click', () => {
+      proclaimLegend(
+        'George Soros',
+        'Phù thủy Quản lý Quỹ · Bậc thầy Vĩ mô',
+        'Trong giao dịch, việc các bạn đúng hay sai hoàn toàn không quan trọng! Điều cốt tử là khi đúng các bạn kiếm được bao nhiêu tiền, và khi sai các bạn chịu mất bao nhiêu pip!',
+        '🎯',
+        'George Soros'
+      );
+    });
+    document.getElementById('btnLegendBuffett')?.addEventListener('click', () => {
+      proclaimLegend(
+        'Warren Buffett',
+        'Nhà tiên tri xứ Omaha · Chủ tịch Berkshire Hathaway',
+        'Tôi xin long trọng nhắc lại hai chân lý bất biến: Nguyên tắc số 1 là không bao giờ để cháy sạch vốn. Nguyên tắc số 2 là khi chuẩn bị nhồi lệnh thì hãy mở lại nguyên tắc số 1!',
+        '🏛️',
+        'Warren Buffett'
+      );
+    });
+    document.getElementById('btnLegendSatoshi')?.addEventListener('click', () => {
+      proclaimLegend(
+        'Satoshi Nakamoto',
+        'Nhà sáng lập Bitcoin · Bậc thầy Ẩn danh',
+        'Nếu các bạn không hiểu hoặc không tin vào bản chất của mạng lưới phi tập trung, tôi thành thật không có đủ thời gian để đứng đây giải thích cho các bạn đâu!',
+        '⚡',
+        'Satoshi Nakamoto'
+      );
+    });
+    document.getElementById('btnLegendPowell')?.addEventListener('click', () => {
+      proclaimLegend(
+        'Jerome Powell',
+        'Chủ tịch Cục Dự trữ Liên bang Mỹ (FED)',
+        'Chúng tôi sẽ kiên quyết theo dõi dữ liệu kinh tế và duy trì lãi suất ở mức hạn chế cho đến khi lạm phát được kiểm soát. Các vị hãy chuẩn bị tinh thần đón nhận những đợt rung lắc!',
+        '🦅',
+        'FED Powell'
+      );
+    });
+
+    // --- 4D. LỚP PHỦ CHỐNG BẢN QUYỀN & WATERMARK ẨN CONTROLLER ---
+    let isWatermarkRevealed = false;
+    const btnToggleWatermarkReveal = document.getElementById('btnToggleWatermarkReveal');
+    const iconWatermarkReveal = document.getElementById('iconWatermarkReveal');
+    const textWatermarkReveal = document.getElementById('textWatermarkReveal');
+    const sliderWatermarkOpacity = document.getElementById('sliderWatermarkOpacity');
+    const badgeWatermarkOpacity = document.getElementById('badgeWatermarkOpacity');
+
+    function syncWatermarkToOverlay(reveal, opacity) {
+      try {
+        const liveFrame = document.getElementById('liveOverlayFrame');
+        liveFrame?.contentWindow?.postMessage({
+          type: 'set-stealth-watermark',
+          reveal,
+          opacity
+        }, '*');
+      } catch (e) {}
+    }
+
+    if (btnToggleWatermarkReveal) {
+      btnToggleWatermarkReveal.onclick = () => {
+        isWatermarkRevealed = !isWatermarkRevealed;
+        if (isWatermarkRevealed) {
+          iconWatermarkReveal.textContent = '🕶️';
+          textWatermarkReveal.textContent = 'Ẩn Tuyệt Đối (Live)';
+          btnToggleWatermarkReveal.className = 'px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-stone-950 font-extrabold text-xs border border-amber-400 shadow flex items-center gap-1.5 btn-press transition animate-pulse';
+          showToast('ĐANG SOI WATERMARK ẨN: Hiển thị nổi các con dấu kiểm định bản quyền!', '👁️', 'gold');
+        } else {
+          iconWatermarkReveal.textContent = '👁️';
+          textWatermarkReveal.textContent = 'Soi Watermark Ẩn';
+          btnToggleWatermarkReveal.className = 'px-3 py-1.5 rounded-lg bg-emerald-800/80 hover:bg-emerald-700 text-white font-bold text-xs border border-emerald-500/50 shadow flex items-center gap-1.5 btn-press transition';
+          showToast('Đã trở về chế độ ẨN TUYỆT ĐỐI (Mắt thường vô hình, bảo vệ bản quyền tối đa)!', '🕶️', 'gold');
+        }
+        syncWatermarkToOverlay(isWatermarkRevealed, Number(sliderWatermarkOpacity?.value || 0.009));
+      };
+    }
+
+    if (sliderWatermarkOpacity) {
+      sliderWatermarkOpacity.oninput = () => {
+        const op = Number(sliderWatermarkOpacity.value);
+        const percent = (op * 100).toFixed(1);
+        badgeWatermarkOpacity.textContent = `${percent}% ${op <= 0.015 ? '(Tàng hình)' : '(Nhìn mờ)'}`;
+        if (!isWatermarkRevealed) {
+          syncWatermarkToOverlay(false, op);
+        }
+      };
+    }
+
+    // --- 5. Giả Lập Comment, Thả Tim & Tặng Bông ---
+    document.querySelectorAll('.chat-preset-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.getElementById('inputChatMsg').value = btn.getAttribute('data-text');
+      };
+    });
+
+    async function refreshSessionStats() {
+      try {
+        const res = await fetch('/api/state');
+        if (!res.ok) return;
+        const s = await res.json();
+        document.getElementById('statSessionCoins').textContent = Number(s?.hall?.totalCoins || 0).toLocaleString('vi-VN');
+        document.getElementById('statSessionLikes').textContent = Number(s?.sessionStats?.totalLikes || 0).toLocaleString('vi-VN');
+        document.getElementById('statSimLikes').textContent = Number(s?.sessionStats?.simLikes || 0).toLocaleString('vi-VN');
+        document.getElementById('statSessionFollowers').textContent = Number(s?.sessionStats?.followersCount || 0).toLocaleString('vi-VN');
+      } catch {}
+    }
+    refreshSessionStats();
+
+    document.getElementById('btnSendChat').onclick = async () => {
+      const text = document.getElementById('inputChatMsg').value.trim() || 'lên nào cụ vàng';
+      const name = document.getElementById('inputTraderName')?.value.trim() || 'Trader TikTok';
+      showToast(`Đã gửi bình luận: "${text}"`, '💬');
+      await apiCall('/api/simulate', 'POST', { scenario: 'comment', nickname: name, comment: text });
+      document.getElementById('inputChatMsg').value = '';
+    };
+
+    document.getElementById('btnSendLikes').onclick = async () => {
+      const name = document.getElementById('inputTraderName')?.value.trim() || 'Trader Thả Tim';
+      showToast('Đã thả 50 tim tăng tương tác live!', '❤️');
+      await apiCall('/api/simulate', 'POST', { scenario: 'like', userId: 'sim-like-user', nickname: name, likeCount: 50 });
+      refreshSessionStats();
+    };
+
+    document.getElementById('btnSendBurstLikes').onclick = async () => {
+      const name = document.getElementById('inputTraderName')?.value.trim() || 'Chiến Thần Tim';
+      const burstUserId = `sim-burst-${name.toLowerCase().replace(/\s+/g, '-')}`;
+      showToast(`🔥 Đang bắn 10 đợt × 100 tim cho ${name} để kiểm tra mốc 1.000 tim!`, '🔥');
+      for (let i = 0; i < 10; i++) {
+        await apiCall('/api/simulate', 'POST', { scenario: 'like', userId: burstUserId, nickname: name, likeCount: 100 });
+      }
+      refreshSessionStats();
+    };
+
+    document.getElementById('btnSendFollow').onclick = async () => {
+      const name = document.getElementById('inputTraderName')?.value.trim() || 'Huynh Đệ Mới';
+      showToast(`🔔 ${name} vừa Follow Xóm Trade (+5kg Kéo Co)!`, '🔔');
+      await apiCall('/api/simulate', 'POST', { scenario: 'follow', nickname: name });
+      refreshSessionStats();
+    };
+
+    // Unified handler cho đủ 7 mốc xu TikTok Live + Combo streak
+    document.querySelectorAll('.gift-tier-btn').forEach(btn => {
+      btn.onclick = async () => {
+        const coins = Number(btn.dataset.coins || 1);
+        const giftName = btn.dataset.gift || 'Quà TikTok';
+        const defaultNames = { 1: 'Hiệp Sĩ Xanh', 5: 'Trader Kim Cương', 500: 'Chủ Tịch Quỹ' };
+        const name = document.getElementById('inputTraderName')?.value.trim() || defaultNames[coins] || 'Đại Gia Xóm Trade';
+        showToast(`🎁 ${name} vừa tặng ${giftName} (${coins} xu)!`, coins >= 100 ? '👑' : '🎁', coins >= 100 ? 'gold' : undefined);
+        await apiCall('/api/simulate', 'POST', { scenario: 'gift', coins, giftName, nickname: name });
+        refreshSessionStats();
+      };
+    });
+
+    document.getElementById('btnSendComboRose').onclick = async () => {
+      const name = document.getElementById('inputTraderName')?.value.trim() || 'Đại Gia Bull';
+      showToast(`💐 ${name} vừa tặng Combo 5 Bông Hoa (5 xu)!`, '💐');
+      await apiCall('/api/simulate', 'POST', { scenario: 'combo', nickname: name });
+      refreshSessionStats();
+    };
+
+    // --- WebSocket Realtime Client for Admin UI State Sync ---
+    function connectAdminWs() {
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${location.host}/ws?role=admin`;
+      const ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        document.getElementById('syncStatusTag').textContent = '🟢 WebSocket Realtime Sync';
+        document.getElementById('syncStatusTag').className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40';
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'tug_state_broadcast' && msg.data) {
+            const tug = msg.data;
+            cockpitBullPower.textContent = `${Math.round(tug.bullPower || 0).toLocaleString()} kg`;
+            cockpitBearPower.textContent = `${Math.round(tug.bearPower || 0).toLocaleString()} kg`;
+            cockpitTugTime.textContent = tug.status === 'active' ? `${Math.round(tug.timeLeftSec || 0)}s` : (tug.status === 'finished' ? 'Hết Giờ' : 'Chờ Hiệp');
+          }
+          if (msg.type === 'tug_result_broadcast' && msg.data) {
+            const mvp = msg.data.mvp;
+            const titleTag = mvp?.title ? `[${mvp.title}] ` : '';
+            cockpitTugTime.textContent = 'Kết Thúc!';
+            showToast(`🏆 Kéo Co: ${titleTag}${mvp?.nickname || 'MVP'} (+${Number(mvp?.contributedPower || 0).toLocaleString()}kg)! ${msg.data.headline || ''}`, '⚔️');
+          }
+          if (msg.type === 'breaking_news_broadcast') {
+            showToast(`Tin Nóng: ${msg.data.headline}`, '📰');
+          }
+          if (msg.type === 'wheel_result_broadcast') {
+            showToast(`Kết Quả Bói Nến: ${msg.data.slot?.title || 'Về Bờ Trong Mơ'}!`, '🎰');
+          }
+          if (msg.type === 'street_comedy_broadcast') {
+            showToast(`🎬 Đang diễn tiểu phẩm hài: ${msg.data?.scenario || 'Xóm Trade'}!`, '🧹');
+          }
+          if (msg.type === 'trader_legend_broadcast') {
+            showToast(`🏛️ Huấn thị: ${msg.data?.legend?.author || 'CZ Binance'}!`, '💎', 'gold');
+          }
+          if (msg.type === 'new_follower_broadcast' && msg.data) {
+            const nick = msg.data.nickname || '';
+            if (msg.data.followerCount != null) {
+              document.getElementById('statSessionFollowers').textContent = Number(msg.data.followerCount).toLocaleString('vi-VN');
+            }
+            if (cockpitVoice && masterTtsEnabled && hasCockpitAudioUnlocked && shouldSpeakFromBroadcast(`follow:${nick}`)) {
+              markCockpitSpeech(`follow:${nick}`);
+              cockpitVoice.speakFollow(nick, true);
+            }
+          }
+          if (msg.type === 'thousand_likes_broadcast' && msg.data) {
+            const nick = msg.data.nickname || '';
+            showToast(`❤️ ${nick} vừa chạm mốc ${Number(msg.data.likeCount || 1000).toLocaleString('vi-VN')} tim!`, '❤️');
+            refreshSessionStats();
+            if (cockpitVoice && masterTtsEnabled && hasCockpitAudioUnlocked && shouldSpeakFromBroadcast(`likes:${nick}`)) {
+              markCockpitSpeech(`likes:${nick}`);
+              cockpitVoice.speakThousandLikes(nick, msg.data.likeCount || 1000);
+            }
+          }
+        } catch (e) {}
+      };
+
+      ws.onclose = () => {
+        document.getElementById('syncStatusTag').textContent = '⚠️ Mất kết nối, đang thử lại...';
+        document.getElementById('syncStatusTag').className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40';
+        setTimeout(connectAdminWs, 2000);
+      };
+    }
+    connectAdminWs();
+  </script>
+</body>
+</html>

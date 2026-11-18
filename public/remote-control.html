@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Xóm Trade · Điều khiển Live từ xa</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/remote-control.css?v=2">
+  <script type="module" src="/js/remote-control.js?v=3"></script>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <p class="eyebrow">XÓM TRADE · REMOTE LIVE</p>
+      <h1>Điều khiển hiệu ứng</h1>
+      <p class="hint">Các lệnh phát thẳng sang Overlay OBS. Không có quyền đổi cấu hình hoặc kết nối TikTok.</p>
+      <p id="connection" class="status waiting">Đang kiểm tra màn phát…</p>
+    </header>
+
+    <section class="card">
+      <h2>⚔️ Đại chiến Bò · Gấu</h2>
+      <div class="grid three">
+        <button data-command="tug-start" class="primary">▶ Bắt đầu hiệp</button>
+        <button data-command="tug-bull" class="bull">🐂 Tiếp Bò +50</button>
+        <button data-command="tug-bear" class="bear">🐻 Tiếp Gấu +50</button>
+      </div>
+      <button data-command="tug-reset" class="subtle full">↻ Reset kéo co về mốc 0</button>
+    </section>
+
+    <section class="card">
+      <h2>🎵 Nhạc nền & giọng đọc</h2>
+      <label for="musicFile">Bài nhạc nền</label>
+      <select id="musicFile"></select>
+      <div class="grid two compact">
+        <button id="musicOn" class="primary">▶ Bật nhạc</button>
+        <button id="musicOff" class="subtle">■ Tắt nhạc</button>
+      </div>
+      <label for="musicVolume">Âm lượng nhạc: <b id="musicVolumeValue">35%</b></label>
+      <input id="musicVolume" type="range" min="0" max="100" value="35">
+      <label class="check"><input id="voiceEnabled" type="checkbox"> Bật giọng đọc/TTS khi có hiệu ứng</label>
+    </section>
+
+    <section class="card">
+      <h2>📺 Bảng nến & bố cục màn phát</h2>
+      <label for="chartSymbol">Cặp nến</label>
+      <select id="chartSymbol">
+        <option value="OANDA:XAUUSD">🌟 Vàng XAU/USD</option><option value="FX:EURUSD">EUR/USD</option><option value="FX:GBPUSD">GBP/USD</option><option value="FX:USDJPY">USD/JPY</option>
+      </select>
+      <label for="chartTimeframe">Khung thời gian</label>
+      <select id="chartTimeframe"><option value="1">1 phút</option><option value="5">5 phút</option><option value="15">15 phút</option><option value="60">1 giờ</option><option value="240">4 giờ</option><option value="D">1 ngày</option></select>
+      <div class="grid two compact"><label class="check"><input id="showRitualBoard" type="checkbox"> Bảng quà</label><label class="check"><input id="showLeaderboard" type="checkbox"> Bảng vinh danh</label></div>
+    </section>
+
+    <section class="card">
+      <h2>✨ Kích hoạt không khí Live</h2>
+      <div class="grid two">
+        <button data-command="energy">🕯️ Tiếp năng lượng</button>
+        <button data-command="fortune">🥠 Bói quẻ nến</button>
+        <button data-command="bell">🔔 Gõ chuông tỉnh tâm</button>
+        <button data-command="wheel">☸️ Quay vòng định mệnh</button>
+        <button data-command="siren" class="danger">🚨 Còi quét thanh khoản</button>
+        <button data-command="comedy">🎬 Diễn tiểu phẩm</button>
+        <button data-command="legend">💎 Mời huyền thoại</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>📰 Tin nóng Phố Wall</h2>
+      <label for="headline">Nội dung tin</label>
+      <input id="headline" maxlength="180" placeholder="Ví dụ: VÀNG BỨT PHÁ, XÓM TRADE DẬY SÓNG!">
+      <button data-command="news" class="news">📣 Phát Tin nóng</button>
+    </section>
+
+    <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+    <p class="secret">Giữ kín link này. Ai có link đều có thể điều khiển hiệu ứng Live.</p>
+  </main>
+</body>
+</html>

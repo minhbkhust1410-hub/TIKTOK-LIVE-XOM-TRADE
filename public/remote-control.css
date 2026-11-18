@@ -1,0 +1,22 @@
+:root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background:#100a08; color:#fff4d4; }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; background:radial-gradient(circle at 20% 0,#48301a 0,transparent 35%),linear-gradient(145deg,#100a08,#1e110a); }
+.shell { width:min(760px,100%); margin:auto; padding:28px 18px 50px; }
+header { text-align:center; margin-bottom:18px; }
+.eyebrow { margin:0; color:#f4bd5f; letter-spacing:.14em; font-size:.72rem; font-weight:800; }
+h1 { margin:8px 0; font-size:clamp(1.8rem,6vw,2.5rem); }
+h2 { margin:0 0 14px; font-size:1.05rem; }
+.hint,.secret { color:#d1bfa7; line-height:1.45; font-size:.9rem; }
+.status { display:inline-block; border:1px solid #715330; border-radius:999px; padding:7px 12px; font-weight:700; font-size:.86rem; }
+.status.ok { color:#9ff3bf; border-color:#20a35e; background:#062f1c; }
+.status.waiting { color:#ffd17e; background:#35220d; }
+.status.bad { color:#ffb1a9; border-color:#bb3c36; background:#401310; }
+.card { background:rgba(39,22,12,.92); border:1px solid #765027; border-radius:16px; padding:17px; margin:14px 0; box-shadow:0 12px 30px rgba(0,0,0,.2); }
+.grid { display:grid; gap:10px; }.grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }.grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+button { border:1px solid #a87735; border-radius:11px; padding:14px 10px; color:#fff7e7; background:#37200f; font:700 .93rem/1.15 inherit; cursor:pointer; min-height:52px; }
+button:hover { filter:brightness(1.18); } button:disabled { opacity:.55; cursor:wait; }
+button.primary,.news { background:#8c5308; border-color:#ffc467; }.bull { background:#006f50; border-color:#26d49a; }.bear,.danger { background:#941e1b; border-color:#ff7670; }
+label { display:block; margin-bottom:7px; color:#e5c78e; font-size:.86rem; } input,select { width:100%; margin-bottom:10px; padding:13px; border-radius:10px; border:1px solid #806347; background:#100d0a; color:#fff; font:inherit; }
+.compact { margin:8px 0 12px; }.full { width:100%; margin-top:10px; }.subtle { background:#2c2118; }.check { display:flex; align-items:center; gap:8px; padding:8px 0; }.check input { width:auto; margin:0; }
+.feedback { min-height:24px; text-align:center; font-weight:700; color:#ffd17e; }.feedback.error { color:#ffaaa2; }.secret { text-align:center; margin-top:22px; }
+@media (max-width:520px) { .grid.three { grid-template-columns:1fr; } }

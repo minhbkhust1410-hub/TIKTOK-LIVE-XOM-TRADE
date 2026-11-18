@@ -1,0 +1,22 @@
+{
+  "name": "du-chart-online",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Đu Chart Online - Nền tảng giải trí cộng đồng trader: Cùng xem chart Forex/Vàng, xả stress, bói nến an lạc và tương tác hài hước",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "4.21.2",
+    "msedge-tts": "^2.1.1",
+    "node-edge-tts": "^1.2.12",
+    "tiktok-live-connector": "2.5.0",
+    "ws": "8.18.3"
+  }
+}

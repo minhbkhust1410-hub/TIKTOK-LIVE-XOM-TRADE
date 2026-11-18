@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Đu Chart Online — Phòng Cùng Xem Nến & Xả Stress Forex</title>
+  <meta name="description" content="Nền tảng giải trí cộng đồng trader: Cùng xem chart Forex/Vàng thời gian thực, bói quẻ nến an lạc, gõ chuông tỉnh tâm và chia sẻ cảm xúc.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕯️</text></svg>">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #1c1917; }
+    ::-webkit-scrollbar-thumb { background: #44403c; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #78716c; }
+    
+    @keyframes floatUp {
+      0% { opacity: 0; transform: translateY(15px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes flyReaction {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-160px) scale(1.3); }
+    }
+    .reaction-fly { animation: flyReaction 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .card-appear { animation: floatUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  </style>
+</head>
+<body class="bg-stone-950 text-stone-100 min-h-screen flex flex-col font-sans antialiased overflow-x-hidden selection:bg-amber-600 selection:text-stone-950">
+
+  <!-- ================= TOP NAVBAR ================= -->
+  <header class="bg-stone-900/90 backdrop-blur border-b border-stone-800 sticky top-0 z-40 px-3 py-2 sm:px-6">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      
+      <!-- Brand & Room Status -->
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-2 group">
+          <span class="text-2xl transition-transform group-hover:scale-110">🕯️</span>
+          <div>
+            <h1 class="text-sm sm:text-base font-extrabold tracking-tight text-amber-400 group-hover:text-amber-300 transition" id="appTitle">Đu Chart Online</h1>
+            <p class="text-[10px] text-stone-400 leading-none">Cộng đồng ngắm nến & xả stress</p>
+          </div>
+        </a>
+
+        <!-- Current Room Badge -->
+        <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-stone-950 border border-stone-800 rounded-lg text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="font-bold text-amber-200" id="currentRoomName">Phòng Cháy Tài Khoản #1</span>
+          <span class="text-stone-500 text-[10px]" id="currentRoomCode">(general)</span>
+        </div>
+      </div>
+
+      <!-- Center / Room Mode Badge -->
+      <div class="flex items-center gap-1.5 text-xs">
+        <span id="viewModeBadge" class="px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-600/60 text-emerald-300 font-medium text-[11px] flex items-center gap-1">
+          <span>👥</span> <span id="viewModeText">Theo phòng</span>
+        </span>
+        <button id="rejoinRoomSyncBtn" class="hidden px-2 py-0.5 rounded-full bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold text-[11px] transition shadow">
+          Quay lại theo phòng
+        </button>
+      </div>
+
+      <!-- Right Controls: User Profile, Sound & Share -->
+      <div class="flex items-center gap-2">
+        <!-- Online Counter -->
+        <div class="flex items-center gap-1 px-2 py-1 bg-stone-800/80 rounded-lg text-xs font-mono text-stone-300" title="Số trader online thực tế trong phòng">
+          <span class="text-emerald-400 font-bold">●</span>
+          <span id="onlineCountBadge">1</span> <span class="hidden md:inline text-[11px] text-stone-400">online</span>
+        </div>
+
+        <!-- Audio Toggle Button -->
+        <button id="soundToggleBtn" class="px-2.5 py-1 bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs rounded-lg border border-stone-700 flex items-center gap-1 transition" title="Bật/Tắt âm thanh chuông mõ">
+          <span id="soundIcon">🔊</span>
+          <span class="hidden md:inline" id="soundLabel">Âm thanh</span>
+        </button>
+
+        <!-- Share Room Button -->
+        <button id="shareRoomBtn" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold text-xs rounded-lg transition shadow flex items-center gap-1">
+          <span>🔗</span>
+          <span class="hidden sm:inline">Mời bạn</span>
+        </button>
+
+        <!-- User Identity Tag -->
+        <div class="flex items-center gap-1.5 pl-1.5 border-l border-stone-800" id="userProfileTag">
+          <button id="editNameBtn" class="flex items-center gap-1.5 bg-stone-800 hover:bg-stone-700 px-2 py-1 rounded-lg text-xs transition border border-stone-700" title="Bấm để đổi tên">
+            <span class="font-bold text-stone-200" id="userDisplayName">Trader</span>
+            <span class="px-1.5 py-0.2 rounded text-[10px] bg-amber-900/60 text-amber-300 font-bold" id="userLevelBadge">F0</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MOBILE NAVIGATION TABS ================= -->
+  <nav class="sm:hidden bg-stone-900 border-b border-stone-800 flex justify-around text-xs font-semibold px-1 py-1 z-30">
+    <button class="mobile-tab-btn flex-1 py-1.5 rounded-lg text-center text-amber-400 bg-stone-800 transition" data-target="panel-chart">📊 Chart</button>
+    <button class="mobile-tab-btn flex-1 py-1.5 rounded-lg text-center text-stone-400 hover:text-stone-200 transition" data-target="panel-chat">💬 Chat & Xóm Trade</button>
+    <button class="mobile-tab-btn flex-1 py-1.5 rounded-lg text-center text-stone-400 hover:text-stone-200 transition" data-target="panel-rituals">🕯️ Bói Nến & Xả Xui</button>
+    <button class="mobile-tab-btn flex-1 py-1.5 rounded-lg text-center text-stone-400 hover:text-stone-200 transition" data-target="panel-ranks">🏆 Bảng Điểm</button>
+  </nav>
+
+  <!-- ================= MAIN WORKSPACE LAYOUT ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-2 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
+    
+    <!-- LEFT & CENTER: CHART & FOREX ACTIONS (Cols 1-8 on desktop) -->
+    <div class="lg:col-span-8 flex flex-col gap-3 sm:gap-4 w-full" id="panel-chart">
+      
+      <!-- Chart Controls Bar: Watchlist & Timeframes -->
+      <div class="bg-stone-900 border border-stone-800 rounded-xl p-2.5 sm:p-3 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+        
+        <!-- Watchlist Pills -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-[11px] font-bold text-stone-400 uppercase tracking-wider mr-1">Thị trường:</span>
+          <button class="watchlist-btn px-2.5 py-1 rounded-lg text-xs font-bold transition bg-amber-600 text-stone-950 shadow" data-symbol="FX:EURUSD">EUR/USD</button>
+          <button class="watchlist-btn px-2.5 py-1 rounded-lg text-xs font-bold transition bg-stone-800 hover:bg-stone-700 text-stone-300" data-symbol="FX:GBPUSD">GBP/USD</button>
+          <button class="watchlist-btn px-2.5 py-1 rounded-lg text-xs font-bold transition bg-stone-800 hover:bg-stone-700 text-stone-300" data-symbol="FX:USDJPY">USD/JPY</button>
+          <button class="watchlist-btn px-2.5 py-1 rounded-lg text-xs font-bold transition bg-stone-800 hover:bg-stone-700 text-amber-300" data-symbol="OANDA:XAUUSD">🌟 Vàng (XAU/USD)</button>
+        </div>
+
+        <!-- Timeframe Pills -->
+        <div class="flex items-center gap-1">
+          <span class="text-[11px] font-bold text-stone-400 uppercase tracking-wider mr-1">Khung:</span>
+          <button class="timeframe-btn px-2 py-0.5 rounded text-xs font-mono font-bold transition bg-stone-800 hover:bg-stone-700 text-stone-300" data-tf="1">1M</button>
+          <button class="timeframe-btn px-2 py-0.5 rounded text-xs font-mono font-bold transition bg-stone-800 hover:bg-stone-700 text-stone-300" data-tf="5">5M</button>
+          <button class="timeframe-btn px-2 py-0.5 rounded text-xs font-mono font-bold transition bg-amber-600 text-stone-950 shadow" data-tf="15">15M</button>
+          <button class="timeframe-btn px-2 py-0.5 rounded text-xs font-mono font-bold transition bg-stone-800 hover:bg-stone-700 text-stone-300" data-tf="60">1H</button>
+          <button class="timeframe-btn px-2 py-0.5 rounded text-xs font-mono font-bold transition bg-stone-800 hover:bg-stone-700 text-stone-300" data-tf="240">4H</button>
+          <button class="timeframe-btn px-2 py-0.5 rounded text-xs font-mono font-bold transition bg-stone-800 hover:bg-stone-700 text-stone-300" data-tf="D">1D</button>
+        </div>
+
+      </div>
+
+      <!-- Chart Display Area -->
+      <div class="bg-stone-900 border border-stone-800 rounded-2xl overflow-hidden shadow-2xl relative w-full h-[420px] sm:h-[540px] flex flex-col justify-between">
+        
+        <!-- Live TradingView Container -->
+        <div id="chartContainer" class="w-full h-full relative">
+          <!-- TradingView Widget Script inserts iframe here -->
+          <div id="tradingview_embed" class="w-full h-full"></div>
+
+          <!-- Loading Indicator -->
+          <div id="chartLoading" class="absolute inset-0 bg-stone-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-10 transition-opacity duration-300">
+            <div class="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-xs font-medium text-amber-300 font-mono">Đang kết nối luồng nến TradingView chính thức…</p>
+          </div>
+
+          <!-- Chart Error & Offline Fallback -->
+          <div id="chartFallback" class="absolute inset-0 bg-stone-950/95 flex flex-col items-center justify-center p-6 text-center gap-3 z-20 hidden">
+            <span class="text-4xl">⚠️</span>
+            <h3 class="text-base font-bold text-red-400">Không thể tải chart từ TradingView</h3>
+            <p class="text-xs text-stone-400 max-w-md">Có thể do kết nối mạng chập chờn hoặc tiện ích chặn quảng cáo đang chặn script của TradingView.</p>
+            <div class="flex items-center gap-3 mt-2">
+              <button id="retryChartBtn" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold text-xs rounded-xl transition">Thử tải lại chart</button>
+              <a id="externalChartLink" href="https://www.tradingview.com/symbols/EURUSD/" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs rounded-xl border border-stone-700 transition flex items-center gap-1">
+                <span>Mở trên TradingView</span> <span>↗</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Floating Reactions Overlay (Bay lơ lửng trên chart) -->
+          <div id="reactionFlyZone" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
+        </div>
+
+        <!-- Chart Attribution Footer -->
+        <div class="bg-stone-950/80 px-3 py-1.5 border-t border-stone-800 flex items-center justify-between text-[11px] text-stone-400">
+          <div class="flex items-center gap-2">
+            <span>Nguồn dữ liệu: <b>TradingView</b> (FXCM / OANDA)</span>
+            <span class="text-stone-600">|</span>
+            <span id="chartActiveSymbolLabel" class="font-mono text-amber-300">EUR/USD (15M)</span>
+          </div>
+          <a href="https://www.tradingview.com" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 transition font-medium">
+            TradingView.com ↗
+          </a>
+        </div>
+
+      </div>
+
+      <!-- Quick 1-Click Reactions Bar -->
+      <div class="bg-stone-900 border border-stone-800 rounded-xl p-2.5 flex items-center justify-between gap-2 overflow-x-auto">
+        <span class="text-[11px] font-bold text-stone-400 uppercase tracking-wider shrink-0 mr-1">Cảm xúc:</span>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button class="reaction-btn px-2.5 py-1 bg-stone-950 hover:bg-stone-800 border border-stone-800 hover:border-emerald-500 rounded-lg text-xs text-emerald-400 font-bold transition flex items-center gap-1 active:scale-95" data-reaction="gong-tiep">
+            <span>🟢</span> <span>Gồng tiếp</span>
+          </button>
+          <button class="reaction-btn px-2.5 py-1 bg-stone-950 hover:bg-stone-800 border border-stone-800 hover:border-amber-500 rounded-lg text-xs text-amber-300 font-bold transition flex items-center gap-1 active:scale-95" data-reaction="xin-via-xanh">
+            <span>🕯️</span> <span>Xin vía xanh</span>
+          </button>
+          <button class="reaction-btn px-2.5 py-1 bg-stone-950 hover:bg-stone-800 border border-stone-800 hover:border-blue-500 rounded-lg text-xs text-blue-300 font-bold transition flex items-center gap-1 active:scale-95" data-reaction="ne-fomo">
+            <span>🧘</span> <span>Né FOMO</span>
+          </button>
+          <button class="reaction-btn px-2.5 py-1 bg-stone-950 hover:bg-stone-800 border border-stone-800 hover:border-cyan-500 rounded-lg text-xs text-cyan-300 font-bold transition flex items-center gap-1 active:scale-95" data-reaction="ve-bo">
+            <span>🚢</span> <span>Về bờ</span>
+          </button>
+          <button class="reaction-btn px-2.5 py-1 bg-stone-950 hover:bg-stone-800 border border-stone-800 hover:border-amber-700 rounded-lg text-xs text-stone-300 font-bold transition flex items-center gap-1 active:scale-95" data-reaction="dung-ngoai">
+            <span>☕</span> <span>Đứng ngoài</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- FOREX INTERACTIVE ACTIONS DECK -->
+      <div class="bg-stone-900 border border-stone-800 rounded-2xl p-4 shadow-xl" id="panel-rituals">
+        <div class="flex items-center justify-between mb-3 border-b border-stone-800 pb-2">
+          <div>
+            <h2 class="text-sm font-bold text-amber-300 flex items-center gap-1.5">
+              <span>🕯️</span> <span>Tương Tác Forex & Tích Điểm Kỷ Luật</span>
+            </h2>
+            <p class="text-stone-400 text-xs">Bấm để giải tỏa tâm lý, nhận phản hồi hài hước và nâng cấp danh hiệu!</p>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] text-stone-400">Điểm của bạn:</span>
+            <div class="text-sm font-extrabold font-mono text-amber-400" id="userScoreDisplay">0 pts</div>
+          </div>
+        </div>
+
+        <!-- 4 Core Action Buttons -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          
+          <!-- Action 1: Thắp nhang gồng lệnh -->
+          <button class="action-btn p-3 bg-gradient-to-b from-emerald-950/50 to-stone-950 hover:bg-stone-800/80 border-2 border-emerald-500/70 hover:border-emerald-400 rounded-xl transition flex flex-col items-center text-center gap-1.5 group active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-1 ring-emerald-500/30" data-action="incense">
+            <span class="text-2xl group-hover:scale-125 transition transform">🕯️</span>
+            <span class="text-xs font-bold text-emerald-300">Thắp Nhang Gồng Lệnh</span>
+            <span class="text-[10px] text-emerald-400/90 font-medium">+15 Lực Bò · Hồi 5s</span>
+          </button>
+
+          <!-- Action 2: Bói quẻ nến -->
+          <button class="action-btn p-3 bg-stone-950 hover:bg-stone-800/80 border border-stone-800 hover:border-amber-500 rounded-xl transition flex flex-col items-center text-center gap-1.5 group active:scale-95" data-action="fortune">
+            <span class="text-2xl group-hover:scale-110 transition">🥠</span>
+            <span class="text-xs font-bold text-amber-300">Bói Quẻ Nến (99 Quẻ)</span>
+            <span class="text-[10px] text-stone-400">+20 pts · Giọng Đọc</span>
+          </button>
+
+          <!-- Action 3: Gõ chuông tỉnh tâm -->
+          <button class="action-btn p-3 bg-stone-950 hover:bg-stone-800/80 border border-stone-800 hover:border-amber-600 rounded-xl transition flex flex-col items-center text-center gap-1.5 group active:scale-95" data-action="bell">
+            <span class="text-2xl group-hover:scale-110 transition">🔔</span>
+            <span class="text-xs font-bold text-amber-400">Gõ Chuông Tỉnh Tâm</span>
+            <span class="text-[10px] text-stone-400">+15 pts · Chuông Rền</span>
+          </button>
+
+          <!-- Action 4: Bơm oxy cứu lệnh -->
+          <button class="action-btn p-3 bg-stone-950 hover:bg-stone-800/80 border border-stone-800 hover:border-cyan-500 rounded-xl transition flex flex-col items-center text-center gap-1.5 group active:scale-95" data-action="oxygen">
+            <span class="text-2xl group-hover:scale-110 transition">🫧</span>
+            <span class="text-xs font-bold text-cyan-300">Bơm Oxy Cứu Lệnh</span>
+            <span class="text-[10px] text-stone-400">+5 pts · Hồi 3s</span>
+          </button>
+
+        </div>
+
+        <!-- System Humorous Response Banner -->
+        <div id="systemQuoteBanner" class="mt-3 p-2.5 bg-stone-950 border border-stone-800/80 rounded-xl flex items-center gap-2.5 text-xs text-stone-300">
+          <span class="text-base text-amber-400">💡</span>
+          <span id="quoteText" class="italic">"Tâm bất biến giữa dòng đời nến giật! Hãy giữ vững kỷ luật và stop-loss."</span>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RIGHT: COMMUNITY, LIVE CHAT & LEADERBOARDS (Cols 9-12 on desktop) -->
+    <div class="lg:col-span-4 flex flex-col gap-3 sm:gap-4 w-full">
+      
+      <!-- Room Switcher Card -->
+      <div class="bg-stone-900 border border-stone-800 rounded-xl p-3 shadow-md">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-stone-300 uppercase tracking-wider flex items-center gap-1">
+            <span>🚪</span> <span>Phòng Cộng Đồng</span>
+          </span>
+          <span class="text-[11px] text-stone-400" id="roomCountText">3 phòng có sẵn</span>
+        </div>
+        <div class="grid grid-cols-3 gap-1.5 text-center text-xs" id="quickRoomsGrid">
+          <button class="quick-room-btn p-1.5 rounded-lg border font-bold transition bg-amber-600/30 border-amber-500 text-amber-300" data-room="general">#Cháy-TK-1</button>
+          <button class="quick-room-btn p-1.5 rounded-lg border font-bold transition bg-stone-950 border-stone-800 text-stone-400 hover:border-stone-700" data-room="gold-rush">#Đu-Vàng</button>
+          <button class="quick-room-btn p-1.5 rounded-lg border font-bold transition bg-stone-950 border-stone-800 text-stone-400 hover:border-stone-700" data-room="scalping-night">#Đêm-1M</button>
+        </div>
+      </div>
+
+      <!-- Live Chat & Presence Section -->
+      <div class="bg-stone-900 border border-stone-800 rounded-2xl flex flex-col h-[460px] sm:h-[520px] shadow-xl overflow-hidden" id="panel-chat">
+        
+        <!-- Chat Header: Presence List Dropdown -->
+        <div class="bg-stone-950/80 px-3.5 py-2.5 border-b border-stone-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-xs font-bold text-stone-200">Xóm Trade (<span id="chatOnlineCount">1</span>)</span>
+          </div>
+          <button id="togglePresenceListBtn" class="text-[11px] text-amber-400 hover:text-amber-300 transition">
+            Xem thành viên ▾
+          </button>
+        </div>
+
+        <!-- Dropdown Presence Members List -->
+        <div id="presenceMembersList" class="bg-stone-950 border-b border-stone-800 p-2 max-h-36 overflow-y-auto space-y-1 text-xs hidden">
+          <!-- Member items inserted here -->
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div id="chatMessages" class="flex-1 p-3 overflow-y-auto space-y-2.5 text-xs">
+          <!-- Welcome message -->
+          <div class="bg-stone-950/60 border border-stone-800/80 rounded-xl p-2.5 text-stone-400 text-center space-y-1">
+            <p class="font-semibold text-amber-300">Chào mừng bạn đến với Đu Chart Online!</p>
+            <p class="text-[11px]">Chat lành mạnh, cùng giữ kỷ luật, không spam hay đưa ra lời khuyên tài chính.</p>
+          </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form id="chatForm" class="bg-stone-950/90 border-t border-stone-800 p-2.5 flex items-center gap-2">
+          <input type="text" id="chatInput" maxlength="200" placeholder="Nhập tâm sự gồng lệnh… (Enter để gửi)" class="flex-1 bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 text-xs text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-500 transition" autocomplete="off">
+          <button type="submit" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold text-xs rounded-xl transition shrink-0 active:scale-95 shadow">
+            Gửi
+          </button>
+        </form>
+
+      </div>
+
+      <!-- Leaderboard Card -->
+      <div class="bg-stone-900 border border-stone-800 rounded-2xl p-3.5 shadow-xl" id="panel-ranks">
+        <div class="flex items-center justify-between mb-2.5 border-b border-stone-800 pb-2">
+          <h3 class="text-xs font-bold text-amber-300 flex items-center gap-1.5 uppercase tracking-wider">
+            <span>🏆</span> <span>Chiến Thần Đu Đỉnh (Top BXH)</span>
+          </h3>
+          <span class="text-[10px] text-stone-400">Server Realtime</span>
+        </div>
+        <div class="space-y-1.5 text-xs max-h-48 overflow-y-auto pr-1" id="leaderboardList">
+          <div class="text-center text-stone-500 text-[11px] py-3">Đang cập nhật danh sách…</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= QUẺ NẾN FORTUNE MODAL ================= -->
+  <div id="fortuneModal" class="fixed inset-0 bg-stone-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-amber-50 text-stone-900 border-4 border-amber-700 rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative card-appear">
+      
+      <button id="closeFortuneModalBtn" class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold text-xs flex items-center justify-center transition">
+        ✕
+      </button>
+
+      <div class="text-[10px] font-bold tracking-widest text-red-700 uppercase border-b border-amber-300 pb-1 mb-2">
+        <span id="modalFortuneNumber">LỜI XĂM SỐ 18 · THƯỢNG CÁT</span>
+      </div>
+
+      <h3 class="text-base font-serif font-bold text-stone-900" id="modalFortuneTitle">
+        Tâm An Vạn Sự Bình
+      </h3>
+
+      <div class="my-3 p-2 bg-amber-100/70 border border-amber-200 rounded-xl text-xs font-serif italic text-stone-800 leading-relaxed" id="modalFortunePoem">
+        "Trăng trong soi bóng mặt hồ<br>Lòng thanh thản nhẹ bến bờ bình an"
+      </div>
+
+      <p class="text-xs text-stone-700 leading-normal" id="modalFortuneMessage">
+        Gặp duyên lành, mọi việc hanh thông, giữ tâm từ bi và hòa nhã trước sóng gió.
+      </p>
+
+      <div class="mt-4 pt-2.5 border-t border-amber-300/80 flex items-center justify-center gap-2 text-[11px] text-amber-900 font-medium">
+        <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+        <span id="modalFortuneAudioStatus">Đang phát giọng đọc Mai Chi…</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= EDIT NAME MODAL ================= -->
+  <div id="nameModal" class="fixed inset-0 bg-stone-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-stone-900 border border-stone-800 rounded-2xl p-5 max-w-xs w-full shadow-2xl text-center card-appear space-y-3">
+      <h3 class="text-sm font-bold text-stone-100">Đổi Tên Hiển Thị</h3>
+      <input type="text" id="nameInput" maxlength="30" class="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-xs text-stone-100 focus:outline-none focus:border-amber-500" placeholder="Nhập biệt danh của bạn…">
+      <div class="flex gap-2">
+        <button id="cancelNameBtn" class="flex-1 py-1.5 bg-stone-800 text-stone-300 text-xs rounded-xl font-medium">Hủy</button>
+        <button id="saveNameBtn" class="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 text-stone-950 text-xs rounded-xl font-bold">Lưu tên</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FOOTER & DISCLAIMER ================= -->
+  <footer class="bg-stone-900/60 border-t border-stone-800/80 px-4 py-4 text-center text-xs text-stone-400 mt-auto">
+    <div class="max-w-4xl mx-auto space-y-1">
+      <p class="font-semibold text-amber-300/90">Đu Chart Online — Nền Tảng Giải Trí Cộng Đồng Trader</p>
+      <p class="text-[11px] leading-relaxed text-stone-400">
+        Điểm ảo và các danh hiệu mang tính giải trí xả stress, <b>hoàn toàn không có giá trị quy đổi tiền mặt</b>. 
+        Nền tảng không phải là sàn giao dịch, không cung cấp dịch vụ tài chính hay lời khuyên đầu tư.
+      </p>
+      <p class="text-[10px] text-stone-400 pt-1">
+        Chart được nhúng chính thức từ <a href="https://www.tradingview.com" target="_blank" rel="noopener noreferrer" class="text-stone-300 underline hover:text-amber-400">TradingView</a>. Toàn bộ quyền sở hữu trí tuệ thuộc về các bên liên quan.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
