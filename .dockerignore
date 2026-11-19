@@ -11,7 +11,9 @@ test
 docs
 tools
 bin
-scripts
+scripts/*
+!scripts/generate-upbeat-tracks.mjs
+public/assets/music/*.wav
 *.log
 *.mp3
 .env
