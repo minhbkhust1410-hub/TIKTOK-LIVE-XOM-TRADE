@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const SAMPLE_RATE = 44100;
 
@@ -338,8 +339,9 @@ const t2 = generateTrack2_NenXanhBungNo(30);
 console.log('Generating Track 3: Hàng Rong Phố Thị (126 BPM)...');
 const t3 = generateTrack3_HangRongPhoThi(30);
 
-const musicDir = 'c:/Users/Admin/Desktop/LiveRepo/public/assets/music';
-const assetsDir = 'c:/Users/Admin/Desktop/LiveRepo/public/assets';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const musicDir = path.resolve(__dirname, '..', 'public', 'assets', 'music');
+fs.mkdirSync(musicDir, { recursive: true });
 
 // Save new upbeat tracks
 fs.writeFileSync(path.join(musicDir, 'xom-trade-ron-rang.wav'), t1);

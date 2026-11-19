@@ -15,8 +15,9 @@ COPY server.js ./
 COPY src ./src
 COPY config ./config
 COPY public ./public
+COPY scripts/generate-upbeat-tracks.mjs ./scripts/generate-upbeat-tracks.mjs
 
-RUN mkdir -p /app/data/tts-cache && chown -R node:node /app
+RUN node scripts/generate-upbeat-tracks.mjs && rm -rf scripts && mkdir -p /app/data/tts-cache && chown -R node:node /app
 
 USER node
 EXPOSE 8080

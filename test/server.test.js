@@ -22,12 +22,11 @@ test('HTTP/WS integration: preview isolation, primary acknowledgement, config an
     const narration = await fetch(url + lastFortune.audio.url); assert.equal(narration.status,200);
     const wav = Buffer.from(await narration.arrayBuffer()); assert.equal(wav.toString('ascii',0,4),'RIFF'); assert.equal(wav.toString('ascii',8,12),'WAVE');
     const music = await (await fetch(url + '/api/music')).json();
-    assert.ok(music.tracks.length>=5);
-    assert.ok(music.tracks.some(t=>t.file==='music.mp3'));
-    assert.ok(!music.tracks.some(t=>t.file==='music.wav'));
-    for (const file of ['music/sen-tinh.mp3','music/truc-an.mp3','music/may-thien.mp3','music/niem-phat-phoi-khi.mp3']) assert.ok(music.tracks.some(t=>t.file===file));
-    const musicBytes=await fetch(url + '/assets/music/sen-tinh.mp3',{headers:{Range:'bytes=0-31'}});
-    assert.equal(musicBytes.status,206); assert.equal((await musicBytes.arrayBuffer()).byteLength,32);
+    assert.ok(music.tracks.length >= 5);
+    assert.ok(!music.tracks.some(t => t.file === 'music.wav'));
+    for (const file of ['music/sen-tinh.wav', 'music/truc-an.wav', 'music/may-thien.wav', 'music/hang-rong-pho-thi.wav', 'music/nen-xanh-bung-no.wav']) assert.ok(music.tracks.some(t => t.file === file), `Missing generated track ${file}`);
+    const musicBytes = await fetch(url + '/assets/music/sen-tinh.wav', { headers: { Range: 'bytes=0-31' } });
+    assert.equal(musicBytes.status, 206); assert.equal((await musicBytes.arrayBuffer()).byteLength, 32);
     assert.equal((await fetch(url + '/assets/wooden-temple-v1/background.png')).status, 200);
     assert.equal((await fetch(url + '/assets/wooden-temple-v1/devotee-sheet.png')).status, 200);
     assert.equal((await request('/api/control', { command: 'clear' }, 'POST', 'https://other.example')).status, 403);

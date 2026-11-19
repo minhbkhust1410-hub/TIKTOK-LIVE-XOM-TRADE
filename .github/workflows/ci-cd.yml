@@ -39,6 +39,9 @@ jobs:
           for f in src/*.js public/js/*.js; do node --check "$f"; done
           node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); JSON.parse(require('fs').readFileSync('firebase.json','utf8'));"
 
+      - name: Generate built-in synth music tracks
+        run: node scripts/generate-upbeat-tracks.mjs
+
       - name: Run CI test suites
         run: npm run test:ci
 

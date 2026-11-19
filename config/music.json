@@ -12,23 +12,35 @@
     "title": "🎮 Hàng Rong Phố Thị · Giai Điệu Tuổi Thơ (126 BPM)"
   },
   {
-    "file": "music.mp3",
-    "title": "🎉 Động Đu Chart · Party Xóm Trade (125 BPM)"
-  },
-  {
-    "file": "music/niem-phat-phoi-khi.mp3",
+    "file": "music/may-thien.wav",
     "title": "⚡ Bắt Đáy Thành Công · Nhịp Sống Vỉa Hè (120 BPM)"
   },
   {
+    "file": "music/truc-an.wav",
+    "title": "🎉 Động Đu Chart · Party Xóm Trade (125 BPM)"
+  },
+  {
+    "file": "music/xom-trade-ron-rang.wav",
+    "title": "🥁 Xóm Trade Rộn Ràng (Bản Gốc)"
+  },
+  {
+    "file": "music.mp3",
+    "title": "🎉 Động Đu Chart · Party Xóm Trade (MP3)"
+  },
+  {
+    "file": "music/niem-phat-phoi-khi.mp3",
+    "title": "⚡ Bắt Đáy Thành Công · Nhịp Sống Vỉa Hè (MP3)"
+  },
+  {
     "file": "music/sen-tinh.mp3",
-    "title": "🔥 Xóm Trade Rộn Ràng · Nhịp Điệu Hàng Rong"
+    "title": "🔥 Xóm Trade Rộn Ràng · Nhịp Điệu Hàng Rong (MP3)"
   },
   {
     "file": "music/truc-an.mp3",
-    "title": "🎮 Hàng Rong Phố Thị · Giai Điệu Tuổi Thơ"
+    "title": "🎮 Hàng Rong Phố Thị · Giai Điệu Tuổi Thơ (MP3)"
   },
   {
     "file": "music/may-thien.mp3",
-    "title": "🚀 Nến Xanh Bùng Nổ · Bull Run Sôi Động"
+    "title": "🚀 Nến Xanh Bùng Nổ · Bull Run Sôi Động (MP3)"
   }
 ]

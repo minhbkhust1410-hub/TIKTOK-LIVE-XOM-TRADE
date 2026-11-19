@@ -927,8 +927,10 @@
     }
     liveOverlayFrame?.addEventListener('load', muteEmbeddedOverlayPreview);
 
+    let audioUnlockInFlight = false;
     function unlockAndPlayAudio() {
       hasCockpitAudioUnlocked = true;
+      document.removeEventListener('click', onFirstClick);
       if (typeof cockpitVoice !== 'undefined' && cockpitVoice) {
         cockpitVoice.unlock();
       }
@@ -944,16 +946,23 @@
       }
 
       // 3. Play direct audio
+      if (audioUnlockInFlight) return;
       const vol = Number(cockpitVolumeSlider?.value || 50) / 100;
       if (directAudio) {
+        audioUnlockInFlight = true;
         directAudio.volume = vol;
         directAudio.play().then(() => {
+          audioUnlockInFlight = false;
           isAudioPlaying = true;
           updateAudioUI(true);
-          showToast('Đã bật nhạc thiền & âm thanh livestream!', '🔊', 'gold');
+          showToast('Đã bật nhạc nền & âm thanh livestream!', '🔊', 'gold');
         }).catch(err => {
+          audioUnlockInFlight = false;
           console.warn('Direct audio play:', err);
           updateAudioUI(false);
+          if (err?.name !== 'AbortError') {
+            showToast('Chưa phát được nhạc nền: hãy kiểm tra file nhạc hoặc chạm lại nút Bật Tiếng!', '⚠️', 'gold');
+          }
         });
       }
     }
@@ -1011,12 +1020,39 @@
       };
     }
 
-    // Auto unlock on first user click anywhere in the window
-    document.addEventListener('click', function onFirstClick() {
+    // Auto unlock on first user click anywhere in the window (ignore explicit audio buttons to avoid double-play AbortError)
+    function onFirstClick(evt) {
+      if (evt?.target?.closest?.('#btnToggleAudio, #btnViewerUnmute, #btnAdminMusicToggle')) return;
       if (directAudio && directAudio.paused && !isAudioPlaying) {
         unlockAndPlayAudio();
       }
-    }, { once: true });
+    }
+    document.addEventListener('click', onFirstClick, { once: true });
+
+    // Sync select box & directAudio with real available music files on the server
+    async function syncCockpitMusicCatalog() {
+      try {
+        const [musicRes, stateRes] = await Promise.all([fetch('/api/music'), fetch('/api/state')]);
+        const musicData = musicRes.ok ? await musicRes.json() : null;
+        const stateData = stateRes.ok ? await stateRes.json() : null;
+        const tracks = musicData?.tracks || [];
+        if (selectCockpitMusic && tracks.length) {
+          const prevVal = stateData?.config?.musicFile || selectCockpitMusic.value;
+          selectCockpitMusic.replaceChildren(...tracks.map(t => {
+            const opt = document.createElement('option');
+            opt.value = t.file;
+            opt.textContent = t.title;
+            return opt;
+          }));
+          const activeTrack = tracks.find(t => t.file === prevVal) || tracks[0];
+          selectCockpitMusic.value = activeTrack.file;
+          if (directAudio && !isAudioPlaying) {
+            directAudio.src = activeTrack.url;
+          }
+        }
+      } catch {}
+    }
+    syncCockpitMusicCatalog();
 
     // Handle sound preview buttons (Mõ, Chuông, Bò Thắng, Gấu Thắng, Còi Sập)
     function playSynthTone(type) {
@@ -1098,11 +1134,10 @@
     if (btnApplyMusicChoice && selectCockpitMusic) {
       btnApplyMusicChoice.onclick = async () => {
         const chosen = selectCockpitMusic.value;
-        if (directAudio) {
-          directAudio.src = '/assets/' + chosen;
-          if (isAudioPlaying) {
-            directAudio.play().catch(() => {});
-          }
+        if (directAudio && chosen) {
+          directAudio.src = '/assets/' + chosen.split('/').map(encodeURIComponent).join('/');
+          directAudio.load();
+          unlockAndPlayAudio();
         }
         try {
           const stateRes = await fetch('/api/state');
