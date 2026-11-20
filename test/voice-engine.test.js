@@ -281,7 +281,7 @@ test('Vietnamese Voice Engine: 7. Stop & Aborted Audio Do Not Trigger Browser Fa
     assert.ok(overlayJs.includes('shouldSpeakCelebration'), 'Overlay must deduplicate social celebration TTS');
     assert.ok(overlayJs.includes('autoFeatures?.comedy'), 'Overlay comedy interval must respect autoFeatures.comedy');
     assert.ok(overlayJs.includes('autoFeatures?.legend'), 'Overlay legend interval must respect autoFeatures.legend');
-    assert.ok(overlayHtml.includes('overlay.js?v=hang-rong-v8.2'), 'overlay.html must bump overlay.js cache buster');
+    assert.ok(overlayHtml.includes('overlay.js?v=hang-rong-v8.3'), 'overlay.html must bump overlay.js cache buster');
     assert.ok(overlayHtml.includes('id="butVisitLayer"'), 'overlay.html must render #butVisitLayer');
     assert.ok(!overlayHtml.includes('0866'), 'overlay.html must not expose phone number');
     assert.ok(!adminHtml.includes('id="butPhone"'), 'admin.html must not render phone input');
@@ -303,6 +303,8 @@ test('Vietnamese Voice Engine: 7. Stop & Aborted Audio Do Not Trigger Browser Fa
     const picked = pickButAppearance({ index: 8 });
     assert.equal(picked.contact, BUT_CONTACT_DISPLAY);
     assert.ok(picked.speechText.includes('A đến Z'));
+    assert.ok(picked.speechText.includes('bí ồ'));
+    assert.ok(!/\bbio\b/i.test(picked.speechText));
     assert.ok(!/\d{4,}/.test(formatButSpeechText(picked.text)));
 
     // Tiered gift appreciation and non-rose "Hoa Sen" gift name preservation

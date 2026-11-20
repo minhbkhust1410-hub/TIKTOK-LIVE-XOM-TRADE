@@ -8,7 +8,7 @@ import { createNarration } from './narration.js?v=hang-rong-v2.0';
 import { musicURL } from './music-files.js?v=hang-rong-v2.0';
 import { createVoiceEngine } from './voice-engine.js?v=voice-queue-v3.7';
 import { resolveWsUrl } from './ws-url.js';
-import { pickButAppearance, BUT_CONTACT_DISPLAY } from './but-lines.js?v=but-v3';
+import { pickButAppearance, BUT_CONTACT_DISPLAY } from './but-lines.js?v=but-v4';
 
 const $ = id => document.getElementById(id);
 const preview = location.pathname === '/preview';

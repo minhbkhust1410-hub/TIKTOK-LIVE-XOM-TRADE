@@ -23,6 +23,7 @@ export const BUT_REWARD_LINES = [
  */
 export function formatButSpeechText(displayText) {
   return String(displayText || '')
+    .replace(/\bbio\b/gi, 'bí ồ')
     .replace(/\bA tới Z\b/g, 'A đến Z');
 }
 

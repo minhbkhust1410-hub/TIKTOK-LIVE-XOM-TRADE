@@ -610,6 +610,8 @@ test('9. Audience Interaction Pipeline: Cumulative 1000 likes, Follow dedup, 7 C
     assert.ok(butJson.contact.toLowerCase().includes('bio'));
     assert.ok(butJson.text.toLowerCase().includes('hoàn phí'));
     assert.ok(butJson.text.toLowerCase().includes('bio'));
+    assert.ok(butJson.speechText.toLowerCase().includes('bí ồ'));
+    assert.ok(!/\bbio\b/i.test(butJson.speechText));
     assert.ok(!/\d{4,}/.test(butJson.text));
     assert.ok(!/back\s*com/i.test(butJson.text));
 
