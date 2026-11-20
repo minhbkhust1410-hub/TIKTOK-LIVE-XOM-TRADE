@@ -7,6 +7,17 @@
   "showLeaderboard": true,
   "voiceEnabled": true,
   "voiceVolume": 0.85,
+  "autoFeatures": {
+    "comedy": true,
+    "legend": true,
+    "but": true,
+    "tug": true,
+    "wheel": true,
+    "siren": true,
+    "news": true,
+    "rituals": true,
+    "crowd": false
+  },
   "participation": { "likesEnabled": true },
   "username": "",
   "volume": 0.35,

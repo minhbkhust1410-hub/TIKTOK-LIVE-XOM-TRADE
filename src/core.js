@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import { RITUALS } from '../public/js/rituals.js';
-import { SCENE_VERSION, RUNTIME_REVISION, HALL_CAPACITY, VISIBLE_HALL_CAPACITY, GIFT_TIERS, giftTier } from '../public/js/experience.js';
+import { SCENE_VERSION, RUNTIME_REVISION, HALL_CAPACITY, VISIBLE_HALL_CAPACITY, GIFT_TIERS, giftTier, normalizeAutoFeatures } from '../public/js/experience.js';
 import { loadFortuneAudio, pickFortune } from './fortunes.js';
 import { hallView } from './hall.js';
 import { InteractionFeed } from './interaction-feed.js';
@@ -44,6 +44,8 @@ export function validateConfig(input) {
   c.voiceEnabled = c.voiceEnabled !== false;
   c.voiceVolume = number(c.voiceVolume, .85);
   if (c.voiceVolume < 0 || c.voiceVolume > 1) throw new Error('Âm lượng giọng đọc từ 0 đến 1.');
+  c.autoFeatures = normalizeAutoFeatures(c.autoFeatures);
+  delete c.butPhone;
   c.participation = { likesEnabled: c.participation?.likesEnabled !== false, likesRequired: 1, cooldownSec: 30, phrase: 'gồng lệnh tất thắng' };
   c.giftTiers = structuredClone(GIFT_TIERS);
   const ids = new Set();

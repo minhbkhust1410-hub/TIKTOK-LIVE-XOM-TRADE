@@ -797,6 +797,14 @@ export function createVoiceEngine(options = {}) {
     enqueue(text, { priority: 1, category: 'comedy', voiceMode: vMode, pitch: 1.0, rate: 1.0 });
   }
 
+  /**
+   * Speak Ông Bụt fee-rebate cameo with calm warm male cadence
+   */
+  function speakBut(text) {
+    if (!text) return;
+    enqueue(text, { priority: 1, category: 'but', voiceMode: 'male', pitch: 1.0, rate: 0.96 });
+  }
+
   function stop() {
     queue.length = 0;
     pendingJoins.length = 0;
@@ -853,6 +861,7 @@ export function createVoiceEngine(options = {}) {
     speakFortune,
     speakTraderLegend,
     speakComedyDialogue,
+    speakBut,
     stop,
     unlock,
     setEngine: (eng) => { engineMode = eng === 'browser' ? 'browser' : 'neural'; notifyState(); },

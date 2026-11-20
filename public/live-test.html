@@ -650,6 +650,20 @@
             </div>
           </div>
 
+          <!-- Nhóm 1B: Ông Bụt Tuần Tra Hoàn Phí (~10 phút ngẫu nhiên/lần) -->
+          <div class="mb-3 space-y-1.5">
+            <span class="text-[10px] text-emerald-300/90 font-bold block tracking-wider uppercase">
+              🧙 1B. ÔNG BỤT HOÀN PHÍ (NGẪU NHIÊN 9–11 PHÚT/LẦN):
+            </span>
+            <button id="btnTriggerBut" class="w-full bg-gradient-to-r from-amber-700 via-yellow-600 to-emerald-700 hover:from-amber-600 hover:to-emerald-600 text-stone-950 font-extrabold py-2 px-3 rounded-lg text-left shadow btn-press transition text-xs border border-yellow-300/80 flex items-center justify-between gap-2">
+              <span class="flex items-center gap-2">
+                <span class="text-base">🧙</span>
+                <span>Gọi Ông Bụt Chạy Vào Nhắc Hoàn Phí (Đổi Câu Hài Ngẫu Nhiên)</span>
+              </span>
+              <span id="butContactTag" class="text-[10px] bg-stone-950/80 text-yellow-200 px-2 py-0.5 rounded font-mono">Ở phần Bio</span>
+            </button>
+          </div>
+
           <!-- Nhóm 2: Huấn thị nghiêm túc hài từ các huyền thoại -->
           <div>
             <span class="text-[10px] text-amber-300/80 font-bold block mb-1.5 tracking-wider uppercase">
@@ -1628,7 +1642,7 @@
         bindCockpitVoice(window.createVoiceEngine);
       }
       // Always pull the versioned module so cached browsers get the latest engine immediately.
-      import('/js/voice-engine.js?v=voice-queue-v3.6').then(mod => {
+      import('/js/voice-engine.js?v=voice-queue-v3.7').then(mod => {
         window.createVoiceEngine = mod.createVoiceEngine;
         const st = cockpitVoice?.getState?.();
         if (!cockpitVoice || (!st?.isSpeaking && (st?.queueLength || 0) === 0)) {
@@ -1858,6 +1872,22 @@
     });
     document.getElementById('btnTriggerComedyModem')?.addEventListener('click', () => {
       triggerComedy('modem_rescue', 'Rút Phích Modem Wi-Fi');
+    });
+
+    document.getElementById('btnTriggerBut')?.addEventListener('click', async () => {
+      if (cockpitVoice) cockpitVoice.unlock();
+      const res = await apiCall('/api/viral/but/trigger', 'POST', {});
+      if (res?.text) {
+        showToast(`🧙 Ông Bụt: "${res.text}"`, '🧙', 'gold');
+        try {
+          const liveFrame = document.getElementById('liveOverlayFrame');
+          liveFrame?.contentWindow?.postMessage({ type: 'trigger-but-visit', ...res }, '*');
+        } catch {}
+        if (cockpitVoice && masterTtsEnabled && shouldSpeakFromBroadcast(`but:${res.timestamp || 'manual'}`)) {
+          markCockpitSpeech(`but:${res.timestamp || 'manual'}`);
+          cockpitVoice.speakBut(res.speechText || res.text);
+        }
+      }
     });
 
     const proclaimLegend = async (author, title, quote, badge, label) => {
@@ -2094,6 +2124,14 @@
           }
           if (msg.type === 'trader_legend_broadcast') {
             showToast(`🏛️ Huấn thị: ${msg.data?.legend?.author || 'CZ Binance'}!`, '💎', 'gold');
+          }
+          if (msg.type === 'but_visit_broadcast' && msg.data) {
+            showToast(`🧙 Ông Bụt: "${msg.data.text || ''}"`, '🧙', 'gold');
+            const key = `but:${msg.data.timestamp || ''}`;
+            if (cockpitVoice && masterTtsEnabled && hasCockpitAudioUnlocked && shouldSpeakFromBroadcast(key)) {
+              markCockpitSpeech(key);
+              cockpitVoice.speakBut(msg.data.speechText || msg.data.text);
+            }
           }
           if (msg.type === 'new_follower_broadcast' && msg.data) {
             const nick = msg.data.nickname || '';

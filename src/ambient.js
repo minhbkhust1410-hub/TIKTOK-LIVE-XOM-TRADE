@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { normalizeEvent } from './core.js';
+import { normalizeAutoFeatures } from '../public/js/experience.js';
 
 export const AMBIENT_DEVOTEES = [
   'Minh An', 'Thiện Tâm', 'Thanh Hoa', 'Bình Tâm', 'An Nhiên',
@@ -119,6 +120,19 @@ export class AmbientEngine {
     return this.getState();
   }
 
+  isAutoEnabled(key) {
+    return this.engine?.config?.autoFeatures?.[key] !== false;
+  }
+
+  hasRealOrLiveSession() {
+    if (this.source?.state?.status === 'connected') return true;
+    const session = this.engine?.stats?.session;
+    return Boolean(
+      (session?.participants && Object.keys(session.participants).length > 0) ||
+      (session?.users && Object.keys(session.users).length > 0)
+    );
+  }
+
   tick() {
     if (!this.enabled) return null;
 
@@ -126,27 +140,21 @@ export class AmbientEngine {
     const showResult = this.autoShow ? this.runShow(Date.now()) : null;
     if (!this.isIdle()) return showResult;
 
-    const roll = Math.random();
-
-    // 1. Tug-of-war ambient micro-pull (40% chance)
-    if (roll < 0.40 && this.viralEngine?.tug) {
-      return this.doTugMicroPull();
+    const idleActions = [];
+    if (this.isAutoEnabled('tug') && this.viralEngine?.tug) idleActions.push(() => this.doTugMicroPull());
+    if (this.isAutoEnabled('crowd')) {
+      if (this.engine) idleActions.push(() => this.doDevoteeAttendance());
+      idleActions.push(() => this.doAmbientComment());
     }
-
-    // 2. Devotee enters temple / takes a seat (30% chance)
-    if (roll < 0.70 && this.engine) {
-      return this.doDevoteeAttendance();
-    }
-
-    // 3. Ambient Chat / Comment in room & feed (30% chance)
-    return this.doAmbientComment();
+    if (!idleActions.length) return showResult;
+    return idleActions[Math.floor(Math.random() * idleActions.length)]();
   }
 
   runShow(now) {
     const viral = this.viralEngine;
     if (!viral) return null;
 
-    if (viral.tug.status !== 'active' && now >= this.nextShow.tug) {
+    if (this.isAutoEnabled('tug') && viral.tug.status !== 'active' && now >= this.nextShow.tug) {
       const state = viral.tug.start({ durationSec: 45 });
       this.nextShow.tug = now + 65000;
       this.nextShow.tugPull = now + 2500;
@@ -154,14 +162,14 @@ export class AmbientEngine {
       return { type: 'auto_tug_start', state };
     }
 
-    if (viral.tug.status === 'active' && now >= this.nextShow.tugPull) {
+    if (this.isAutoEnabled('tug') && viral.tug.status === 'active' && now >= this.nextShow.tugPull) {
       this.nextShow.tugPull = now + 2800 + Math.floor(Math.random() * 1800);
       const pull = this.doTugMicroPull();
       this.onBroadcast('tug_state_broadcast', viral.tug.getState());
       return pull && { type: 'auto_tug_pull', ...pull };
     }
 
-    if (now >= this.nextShow.news) {
+    if (this.isAutoEnabled('news') && now >= this.nextShow.news) {
       this.nextShow.news = now + 35000 + Math.floor(Math.random() * 15000);
       const news = viral.news.flashNews();
       this.onBroadcast('breaking_news_broadcast', news);
@@ -170,25 +178,25 @@ export class AmbientEngine {
 
     // Complete the show loop with visual rituals and audience arrivals, not
     // just viral overlays. These queue behind a real visitor's interaction.
-    if (now >= this.nextShow.ritual) {
+    if (this.isAutoEnabled('rituals') && now >= this.nextShow.ritual) {
       this.nextShow.ritual = now + 46000 + Math.floor(Math.random() * 18000);
       const ritual = this.doAutoRitual();
       return ritual && { type: 'auto_ritual', ...ritual };
     }
 
-    if (now >= this.nextShow.arrival) {
+    if (this.isAutoEnabled('crowd') && now >= this.nextShow.arrival) {
       this.nextShow.arrival = now + 38000 + Math.floor(Math.random() * 16000);
       const arrival = this.doAutoArrival();
       return arrival && { type: 'auto_arrival', ...arrival };
     }
 
-    if (now >= this.nextShow.social) {
+    if (this.isAutoEnabled('crowd') && now >= this.nextShow.social) {
       this.nextShow.social = now + 52000 + Math.floor(Math.random() * 18000);
       const social = this.doAutoSocial();
       return social && { type: 'auto_social', ...social };
     }
 
-    if (now >= this.nextShow.comedy) {
+    if (this.isAutoEnabled('comedy') && now >= this.nextShow.comedy) {
       this.nextShow.comedy = now + 65000 + Math.floor(Math.random() * 20000);
       const scenarios = ['wife_chase', 'chicken_dog', 'tea_debt', 'modem_rescue'];
       const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
@@ -197,7 +205,7 @@ export class AmbientEngine {
       return { type: 'auto_comedy', payload };
     }
 
-    if (now >= this.nextShow.wheel) {
+    if (this.isAutoEnabled('wheel') && now >= this.nextShow.wheel) {
       this.nextShow.wheel = now + 75000 + Math.floor(Math.random() * 20000);
       try {
         const result = viral.wheel.spin({
@@ -208,14 +216,14 @@ export class AmbientEngine {
       } catch { this.nextShow.wheel = now + 15000; }
     }
 
-    if (now >= this.nextShow.legend) {
+    if (this.isAutoEnabled('legend') && now >= this.nextShow.legend) {
       this.nextShow.legend = now + 90000 + Math.floor(Math.random() * 30000);
       const payload = { timestamp: now, automatic: true };
       this.onBroadcast('trader_legend_broadcast', payload);
       return { type: 'auto_legend', payload };
     }
 
-    if (now >= this.nextShow.siren && !viral.siren.getState().active) {
+    if (this.isAutoEnabled('siren') && now >= this.nextShow.siren && !viral.siren.getState().active) {
       this.nextShow.siren = now + 135000 + Math.floor(Math.random() * 30000);
       const alert = viral.siren.trigger({
         durationMs: 12000,
@@ -233,7 +241,7 @@ export class AmbientEngine {
     const tug = this.viralEngine.tug;
     // Only pull if match is active or if autoStartTug is enabled
     if (tug.status !== 'active') {
-      if (this.autoStartTug) {
+      if (this.autoStartTug && this.isAutoEnabled('tug')) {
         tug.start({ durationSec: 90 });
       } else {
         return null;
@@ -263,6 +271,7 @@ export class AmbientEngine {
   }
 
   doDevoteeAttendance() {
+    if (this.hasRealOrLiveSession()) return null;
     const name = AMBIENT_DEVOTEES[Math.floor(Math.random() * AMBIENT_DEVOTEES.length)];
     const id = `devotee_${name.toLowerCase().replace(/\s+/g, '_')}`;
     const idNum = Math.floor(Math.random() * 90);
@@ -292,16 +301,20 @@ export class AmbientEngine {
     const action = ['incense', 'lotus', 'prayer', 'fortune'][Math.floor(Math.random() * 4)];
     const id = randomUUID();
     try {
-      const result = this.engine.ingest(normalizeEvent('gift', {
-        user: { userId: `auto_ritual_${id}`, nickname: name, avatar: '' },
-        giftName: 'Nghi thức tự động Xóm Trade', eventId: id, groupId: id,
-        repeatEnd: true
-      }, 'sim', true), action);
+      const result = this.engine.ingest({
+        ...normalizeEvent('gift', {
+          user: { userId: `auto_ritual_${id}`, nickname: name, avatar: '' },
+          giftName: 'Nghi thức tự động Xóm Trade', eventId: id, groupId: id,
+          repeatEnd: true
+        }, 'sim', true),
+        seatSimulation: false
+      }, action);
       return { name, action, result };
     } catch { return null; }
   }
 
   doAutoArrival() {
+    if (this.hasRealOrLiveSession()) return null;
     const name = AMBIENT_DEVOTEES[Math.floor(Math.random() * AMBIENT_DEVOTEES.length)];
     const id = randomUUID();
     this.onBroadcast('trader_walk_in', {
@@ -317,6 +330,7 @@ export class AmbientEngine {
   }
 
   doAutoSocial() {
+    if (this.hasRealOrLiveSession()) return null;
     const name = AMBIENT_DEVOTEES[Math.floor(Math.random() * AMBIENT_DEVOTEES.length)];
     const likes = Math.random() < .55;
     if (likes) this.onBroadcast('thousand_likes_broadcast', { nickname: name, likeCount: 1000, automatic: true });
@@ -325,6 +339,7 @@ export class AmbientEngine {
   }
 
   doAmbientComment() {
+    if (this.hasRealOrLiveSession()) return null;
     const name = AMBIENT_DEVOTEES[Math.floor(Math.random() * AMBIENT_DEVOTEES.length)];
     const text = AMBIENT_COMMENTS[Math.floor(Math.random() * AMBIENT_COMMENTS.length)];
     const userId = `ambient_${name.toLowerCase().replace(/\s+/g, '_')}`;
@@ -376,6 +391,7 @@ export class AmbientEngine {
       lastRealActivity: this.lastRealActivity,
       tickCount: this.tickCount,
       autoShow: this.autoShow,
+      autoFeatures: normalizeAutoFeatures(this.engine?.config?.autoFeatures),
       nextShow: this.nextShow
     };
   }

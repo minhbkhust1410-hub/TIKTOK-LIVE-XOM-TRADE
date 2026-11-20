@@ -6,9 +6,9 @@
   <title>Đu Chart Online · Màn hình LIVE Stream</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="/overlay.css?v=hang-rong-v4.3">
-  <link rel="stylesheet" href="/overlay-v2.css?v=hang-rong-v5.7">
+  <link rel="stylesheet" href="/overlay-v2.css?v=hang-rong-v5.11">
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-  <script type="module" src="/js/overlay.js?v=hang-rong-v7.6"></script>
+  <script type="module" src="/js/overlay.js?v=hang-rong-v8.2"></script>
 </head>
 <body data-scene-version="wooden-temple-v2">
 <div id="viewport">
@@ -202,6 +202,10 @@
       </div>
     </div>
     <div id="tv_chart_container" class="forex-tv-frame"></div>
+    <div id="tvBrandMask" class="tv-brand-cover" title="Xóm Trade · Đu Chart Live" aria-hidden="true">
+      <span class="tv-brand-cover-icon">🪙</span>
+      <span class="tv-brand-cover-text">XÓM TRADE</span>
+    </div>
   </div>
 
   <!-- Bull vs Bear Tug of War Arena (Sân Khấu Kéo Co Ngay Dưới Màn Bạc) -->
@@ -402,6 +406,51 @@
       <div class="comedy-banner-shout" id="comedyBannerShout">"Đứng lại! Đã bảo đừng có nhồi lệnh x100 rồi mà không nghe! Cháy tài khoản thì ra đê mà ngủ nghe chưa!! 🧹💥"</div>
     </div>
     <div id="comedyTrack" class="comedy-stage-track"></div>
+  </div>
+
+  <!-- Ông Bụt Tuần Tra Hoàn Phí (Ngẫu nhiên ~10 phút/lần hoặc test ngay) -->
+  <div id="butVisitLayer" class="but-visit-layer" hidden>
+    <div id="butRunnerTrack" class="but-runner-track">
+      <div class="but-speech-bubble" id="butSpeechBubble">
+        <div class="but-speech-badge">✨ ÔNG BỤT XÓM TRADE · NHẮC NHẸ HOÀN PHÍ</div>
+        <p class="but-speech-text" id="butSpeechText"></p>
+        <div class="but-phone-pill" id="butPhonePill">📌 Liên hệ hoàn phí: <strong>Ở phần Bio</strong></div>
+      </div>
+      <div class="but-character-wrap">
+        <div class="but-halo"></div>
+        <svg class="but-chibi-svg" viewBox="0 0 180 190" aria-hidden="true">
+          <!-- Swirling Cloud -->
+          <ellipse cx="90" cy="172" rx="58" ry="13" fill="#fffbeb" opacity="0.95"/>
+          <circle cx="52" cy="168" r="14" fill="#ffffff"/>
+          <circle cx="80" cy="165" r="18" fill="#ffffff"/>
+          <circle cx="112" cy="166" r="16" fill="#ffffff"/>
+          <circle cx="132" cy="170" r="12" fill="#fef3c7"/>
+          <!-- Golden Robe -->
+          <path d="M52 104 C44 128 42 152 46 164 L134 164 C138 152 136 128 128 104 Z" fill="#f59e0b" stroke="#78350f" stroke-width="4"/>
+          <path d="M74 104 L90 132 L106 104" fill="#fef08a" stroke="#78350f" stroke-width="3"/>
+          <rect x="64" y="132" width="52" height="10" rx="5" fill="#b45309" stroke="#fef08a" stroke-width="2"/>
+          <!-- Whisk / Phất trần -->
+          <line x1="36" y1="142" x2="54" y2="96" stroke="#78350f" stroke-width="5" stroke-linecap="round"/>
+          <path d="M24 72 C18 88 28 102 44 102 C36 90 42 78 52 72 Z" fill="#fefce8" stroke="#ca8a04" stroke-width="2.5"/>
+          <!-- Gold Ingot -->
+          <path d="M126 116 L154 116 L148 132 L132 132 Z" fill="#fde047" stroke="#78350f" stroke-width="3"/>
+          <!-- Face & White Hair Bun -->
+          <circle cx="90" cy="24" r="14" fill="#f8fafc" stroke="#64748b" stroke-width="3"/>
+          <circle cx="90" cy="64" r="34" fill="#fed7aa" stroke="#78350f" stroke-width="4"/>
+          <!-- Halo crown / Hair -->
+          <path d="M56 58 C56 34 124 34 124 58 C114 48 66 48 56 58 Z" fill="#f8fafc" stroke="#64748b" stroke-width="3"/>
+          <!-- Happy Laughing Eyes & Cheeks -->
+          <path d="M70 60 Q76 53 82 60" fill="none" stroke="#451a03" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M98 60 Q104 53 110 60" fill="none" stroke="#451a03" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="68" cy="70" r="5" fill="#fb7185" opacity="0.55"/>
+          <circle cx="112" cy="70" r="5" fill="#fb7185" opacity="0.55"/>
+          <!-- White Flowing Beard -->
+          <path d="M62 72 C60 108 78 128 90 132 C102 128 120 108 118 72 C106 82 74 82 62 72 Z" fill="#ffffff" stroke="#94a3b8" stroke-width="3"/>
+          <path d="M81 74 Q90 82 99 74" fill="none" stroke="#9a3412" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div class="but-name-tag">🧙 ÔNG BỤT HOÀN PHÍ</div>
+      </div>
+    </div>
   </div>
 
   <!-- Grand Trader Legend Solemn Proclamation Modal (Nghiêm túc một cách hài hước) -->

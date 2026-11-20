@@ -217,6 +217,31 @@ test('Ambient REST API Endpoints: GET state, POST toggle and POST tick', async (
     assert.equal(resTick.status, 200);
     const dataTick = await resTick.json();
     assert.equal(dataTick.ok, true);
+
+    // 4. Per-feature autoFeatures OFF blocks automatic runs without disabling manual controls
+    const allOff = Object.fromEntries(
+      Object.keys(app.engine.config.autoFeatures).map(key => [key, false])
+    );
+    const putCfg = await fetch(`${baseUrl}/api/config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...app.engine.config, autoFeatures: allOff })
+    });
+    assert.equal(putCfg.status, 200);
+    app.ambientEngine.lastRealActivity = Date.now() - 20000;
+    Object.keys(app.ambientEngine.nextShow).forEach(k => { app.ambientEngine.nextShow[k] = 0; });
+    for (let i = 0; i < 15; i++) {
+      assert.equal(app.ambientEngine.tick(), null);
+    }
+    const disabledState = await (await fetch(`${baseUrl}/api/ambient/state`)).json();
+    assert.equal(disabledState.autoFeatures.comedy, false);
+    assert.equal(disabledState.autoFeatures.tug, false);
+
+    // 5. Real TikTok session / real viewer suppresses fake simulated crowd even if crowd=true
+    app.engine.stats.session.participants['real_tiktok_user_1'] = { id: 'real_tiktok_user_1', name: 'Thật TikTok', joinedOrder: 1 };
+    assert.equal(app.ambientEngine.doDevoteeAttendance(), null);
+    assert.equal(app.ambientEngine.doAutoArrival(), null);
+    assert.equal(app.ambientEngine.doAmbientComment(), null);
   } finally {
     await app.close();
     fs.rmSync(dir, { recursive: true, force: true });

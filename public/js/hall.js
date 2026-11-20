@@ -8,15 +8,35 @@ function hashId(str) {
   return Math.abs(h);
 }
 
-// Friendly neighborhood traders to keep the 28-seat market lively and full of people at all times
-const MARKET_TRADERS = [
-  'Minh An', 'Thiện Tâm', 'Thanh Hoa', 'Bình Tâm', 'An Nhiên',
-  'Diệu Hương', 'Ngọc Lan', 'Tâm Minh', 'Quang Huy', 'Hải Yến',
-  'Bảo An', 'Lan Anh', 'Đức Minh', 'Thu Hà', 'Hoàng Nam',
-  'Mai Phương', 'Khánh Linh', 'Tuệ An', 'Trần Tuấn', 'Mai Hoa',
-  'Phúc Thịnh', 'Văn Dũng', 'Hải Đăng', 'Nguyên Khang', 'Chiến Thần Long',
-  'Bác Ba Phi', 'Cô Sáu Phở', 'Anh Bảy Cà Phê'
-];
+// Keep only 3-4 cozy base traders seated initially; remaining seats fill strictly from real TikTok LIVE visitors.
+export const BASE_AMBIENT_SEATS = Object.freeze([22, 26, 12, 19]);
+const AMBIENT_BASE_TRADERS = Object.freeze([
+  'Ẩn Sĩ Trader', 'Gà Cầu Nến', 'Bò Tịnh Tâm', 'Bác Ba Phi'
+]);
+
+/**
+ * Fill remaining vacant chairs with at most 4 base companion traders when real viewers < 4.
+ * Once 4+ real TikTok LIVE visitors/contributors are seated, every occupied chair is 100% real.
+ */
+export function buildHallSeatAssignments(leaders = [], seatCount = HALL_LAYOUT.length) {
+  const assignments = Array.from({ length: seatCount }, (_, index) => leaders[index] || null);
+  const realCount = assignments.filter(Boolean).length;
+  let neededAmbient = Math.max(0, BASE_AMBIENT_SEATS.length - realCount);
+  for (let i = 0; i < BASE_AMBIENT_SEATS.length && neededAmbient > 0; i++) {
+    const seatIdx = BASE_AMBIENT_SEATS[i];
+    if (seatIdx >= 0 && seatIdx < seatCount && !assignments[seatIdx]) {
+      assignments[seatIdx] = {
+        id: `ambient-base-${seatIdx}`,
+        name: AMBIENT_BASE_TRADERS[i],
+        coins: 0,
+        rank: seatIdx + 1,
+        isAmbient: true
+      };
+      neededAmbient--;
+    }
+  }
+  return assignments;
+}
 
 const CROWD_LINES = [
   'Long nhẹ tay thôi!', 'Gấu kia run rồi kìa!', 'Nến này thơm quá!',
@@ -57,7 +77,7 @@ export function createHall(parent) {
   // Create 28 stable physical seat slots once so the DOM never jitters or flashes
   const slots = HALL_LAYOUT.map((layout, index) => {
     const element = document.createElement('div');
-    element.className = 'hall-person occupied';
+    element.className = 'hall-person empty';
     element.setAttribute('role', 'listitem');
     element.dataset.rank = index + 1;
     Object.assign(element.style, {
@@ -112,8 +132,7 @@ export function createHall(parent) {
   };
 
   const stageCrowdTalk = () => {
-    // Only a few tables react at once.  This keeps the screen readable while
-    // still making the market feel occupied and responsive.
+    // Only occupied seats react so empty waiting chairs never show floating bubbles.
     slots.forEach(slot => {
       slot.element.classList.remove(
         'talking', 'gesturing', 'gesture-spot', 'rise-spot',
@@ -122,7 +141,9 @@ export function createHall(parent) {
       slot.speechEl.textContent = '';
       slot.gestureEl.textContent = '';
     });
-    const picks = [...slots].sort(() => Math.random() - .5).slice(0, 4);
+    const occupied = slots.filter(slot => slot.currentUserId != null);
+    if (!occupied.length) return;
+    const picks = [...occupied].sort(() => Math.random() - .5).slice(0, Math.min(4, occupied.length));
     const actions = [
       { cls: 'action-point gesture-spot', icon: '☝️', bubble: true },
       { cls: 'action-fomo rise-spot', icon: '🙋', bubble: true },
@@ -167,22 +188,30 @@ export function createHall(parent) {
   const render = hall => {
     if (collective) { pending = hall; return; }
     const leaders = hall?.seats || hall?.leaderboard || [];
-    const next = JSON.stringify([hall?.mode, leaders.map(u => u ? [u.id, u.coins, u.rank] : null)]);
+    const assigned = buildHallSeatAssignments(leaders, HALL_LAYOUT.length);
+    const next = JSON.stringify([hall?.mode, assigned.map(u => u ? [u.id, u.coins, u.rank] : null)]);
     if (next === signature) return;
     signature = next;
     parent.dataset.mode = hall?.mode || 'live';
 
     HALL_LAYOUT.forEach((layout, index) => {
       const slot = slots[index];
-      const realUser = leaders[index] || null;
-      // Populate every seat with full-body traders so the hall is always bustling and full of life
-      const user = realUser || {
-        id: `ambient-trader-${index}`,
-        name: MARKET_TRADERS[index % MARKET_TRADERS.length],
-        coins: 0,
-        rank: index + 1,
-        isAmbient: true
-      };
+      const user = assigned[index];
+
+      if (!user) {
+        slot.currentUserId = null;
+        slot.currentUserData = null;
+        slot.variant = null;
+        slot.frames = [];
+        slot.occupantEl.replaceChildren();
+        slot.badgeEl.hidden = true;
+        slot.vacantEl.hidden = true;
+        slot.speechEl.textContent = '';
+        slot.gestureEl.textContent = '';
+        slot.element.className = 'hall-person empty';
+        slot.element.setAttribute('aria-label', `Ghế trống ${index + 1}`);
+        return;
+      }
 
       const prevUserId = slot.currentUserId;
       const donor = user.coins > 0;
@@ -228,12 +257,13 @@ export function createHall(parent) {
         };
 
         if (isInitialBoot) {
-          // On boot/reload, seat all characters immediately so the room is instantly packed and full
+          // Seat initial companion slots cleanly on boot without empty room flash
           slot.occupantEl.replaceChildren(frame);
           assignClasses(false);
         } else {
           // Subsequent dynamically arriving viewers enter sequentially one by one
           queueEntrance(() => {
+            if (slot.currentUserId !== user.id) return;
             slot.occupantEl.replaceChildren(frame);
             assignClasses(true);
             // A new real viewer makes their little corner of the room erupt.
@@ -246,6 +276,7 @@ export function createHall(parent) {
 
       } else {
         // Same occupant already seated: update rank/coins quietly without any re-render flicker
+        slot.badgeEl.hidden = false;
         slot.rankEl.textContent = donor ? (user.coins >= 500 ? `👑${user.rank}` : user.rank) : (index < 4 ? `Top ${index + 1}` : '•');
         slot.nameEl.textContent = user.name;
         slot.nameEl.title = `${user.name} · ${donor ? `${user.coins.toLocaleString('vi-VN')} xu` : 'Đang gồng lệnh'}`;

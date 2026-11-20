@@ -889,6 +889,37 @@ body.thanking-donor #ranking{visibility:hidden}
   backface-visibility:hidden;
 }
 
+/* Seal che logo TradingView ở góc dưới trái màn nến (co giãn đúng theo --chart-zoom) */
+.tv-brand-cover{
+  position:absolute;
+  left:calc(5px * var(--chart-zoom, 2.05));
+  bottom:calc(29px * var(--chart-zoom, 2.05));
+  width:calc(46px * var(--chart-zoom, 2.05));
+  height:calc(46px * var(--chart-zoom, 2.05));
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #3b2010 0%, #1c0f08 70%, #120904 100%);
+  border:2.5px solid #dfbd74;
+  box-shadow:0 4px 16px rgba(0,0,0,0.9), inset 0 0 10px rgba(243,210,138,0.28);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  z-index:29;
+  pointer-events:auto;
+  user-select:none;
+}
+.tv-brand-cover-icon{
+  font-size:calc(13px * var(--chart-zoom, 2.05));
+  line-height:1;
+}
+.tv-brand-cover-text{
+  font:900 calc(5.2px * var(--chart-zoom, 2.05))/1 system-ui,sans-serif;
+  letter-spacing:0.4px;
+  color:#fef08a;
+  text-align:center;
+}
+
 /* ==========================================================================
    TV LED BORDER & PROFESSOR CHIBI DOG PACING AT HORIZONTAL BOTTOM
    ========================================================================== */
@@ -2068,9 +2099,12 @@ body.preview #enableAudio { display: none !important; }
 .comedy-top-banner {
   position: absolute;
   top: -660px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   width: 840px;
+  max-width: calc(100% - 48px);
+  transform-origin: center center;
   background: linear-gradient(135deg, rgba(30, 13, 5, 0.98) 0%, rgba(69, 26, 8, 0.98) 50%, rgba(30, 13, 5, 0.98) 100%);
   border: 3px solid #f59e0b;
   border-radius: 18px;
@@ -2115,7 +2149,10 @@ body.preview #enableAudio { display: none !important; }
 .comedy-runner-group {
   position: absolute;
   top: 10px;
+  left: 0;
+  right: 0;
   display: flex;
+  justify-content: center;
   align-items: flex-end;
   gap: 24px;
   pointer-events: none;
@@ -2127,16 +2164,16 @@ body.preview #enableAudio { display: none !important; }
   animation: comedy-sprint-ltr 6.2s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
 }
 @keyframes comedy-sprint-rtl {
-  0% { transform: translateX(1100px); opacity: 0; }
+  0% { transform: translateX(1080px); opacity: 0; }
   8% { opacity: 1; }
   92% { opacity: 1; }
-  100% { transform: translateX(-950px); opacity: 0; }
+  100% { transform: translateX(-1080px); opacity: 0; }
 }
 @keyframes comedy-sprint-ltr {
-  0% { transform: translateX(-950px); opacity: 0; }
+  0% { transform: translateX(-1080px); opacity: 0; }
   8% { opacity: 1; }
   92% { opacity: 1; }
-  100% { transform: translateX(1100px); opacity: 0; }
+  100% { transform: translateX(1080px); opacity: 0; }
 }
 
 .runner-unit {
@@ -2484,3 +2521,128 @@ body.lite-mode .mobile-chart-lite small { color:#b7c2cf; max-width:620px; font-s
 @keyframes prayer-chicken-bow{0%,100%{transform:translateY(0) rotate(-.5deg)}45%{transform:translateY(1px) rotate(.7deg)}62%{transform:translateY(-2px) rotate(-.3deg)}}
 @keyframes prayer-chicken-cheer{0%,100%{transform:translateY(0) rotate(-1.3deg) scale(1)}50%{transform:translateY(-4px) rotate(1.3deg) scale(1.035)}}
 @keyframes hall-tense-small{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.012)}}
+
+/* ==========================================================================
+   ÔNG BỤT TUẦN TRA HOÀN PHÍ LAYER (CHẠY VÀO MÀN HÌNH & ĐỌC THOẠI HÀI HƯỚC)
+   ========================================================================== */
+.but-visit-layer {
+  position: absolute;
+  top: 1120px;
+  left: 0;
+  right: 0;
+  height: 410px;
+  z-index: 66;
+  pointer-events: none;
+  overflow: visible;
+}
+.but-runner-track {
+  position: relative;
+  width: 780px;
+  max-width: calc(100% - 40px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 1;
+}
+.but-runner-track.patrolling {
+  animation: but-patrol-stage 9.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.but-speech-bubble {
+  width: 680px;
+  max-width: 100%;
+  background: linear-gradient(155deg, rgba(255, 251, 235, 0.98) 0%, rgba(254, 243, 199, 0.98) 100%);
+  border: 3.5px solid #d97706;
+  border-radius: 22px;
+  padding: 14px 20px;
+  color: #291709;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.72), 0 0 28px rgba(250, 204, 21, 0.55);
+  text-align: center;
+  position: relative;
+}
+.but-speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 16px 14px 0;
+  border-style: solid;
+  border-color: #d97706 transparent transparent;
+}
+.but-speech-badge {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  color: #78350f;
+  background: rgba(251, 191, 36, 0.35);
+  border: 1px solid rgba(217, 119, 6, 0.45);
+  border-radius: 999px;
+  padding: 3px 12px;
+  margin-bottom: 8px;
+}
+.but-speech-text {
+  margin: 0 0 10px;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #1c1008;
+}
+.but-phone-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(90deg, #065f46, #047857);
+  color: #fef08a;
+  border: 2px solid #fde047;
+  border-radius: 999px;
+  padding: 5px 18px;
+  font-size: 18px;
+  font-weight: 900;
+  box-shadow: 0 4px 12px rgba(6, 95, 70, 0.45);
+}
+.but-character-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: but-float-bob 0.8s ease-in-out infinite alternate;
+}
+.but-halo {
+  position: absolute;
+  top: 8px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(253, 224, 71, 0.62) 0%, rgba(245, 158, 11, 0.22) 55%, transparent 72%);
+  z-index: -1;
+}
+.but-chibi-svg {
+  width: 172px;
+  height: 182px;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.65));
+}
+.but-name-tag {
+  margin-top: -6px;
+  background: linear-gradient(90deg, #78350f, #b45309);
+  color: #fef08a;
+  border: 2px solid #fde047;
+  border-radius: 999px;
+  padding: 3px 14px;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
+}
+@keyframes but-patrol-stage {
+  0% { transform: translateX(-780px) scale(0.9); opacity: 0; }
+  12% { transform: translateX(0) scale(1); opacity: 1; }
+  86% { transform: translateX(0) scale(1); opacity: 1; }
+  100% { transform: translateX(820px) scale(0.92); opacity: 0; }
+}
+@keyframes but-float-bob {
+  0% { transform: translateY(0) rotate(-1.5deg); }
+  100% { transform: translateY(-10px) rotate(1.5deg); }
+}

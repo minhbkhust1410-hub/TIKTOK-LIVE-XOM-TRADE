@@ -1,12 +1,36 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Đu Chart Online · Phòng Điều Khiển Streamer</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/admin.css?v=wooden-v2.8"><script type="module" src="/js/admin.js?v=wooden-v2.8"></script></head>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Đu Chart Online · Phòng Điều Khiển Streamer</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/admin.css?v=wooden-v2.9"><script type="module" src="/js/admin.js?v=wooden-v3.1"></script></head>
 <body>
 <header class="top"><a class="brand" href="/admin"><span class="brand-mark">🕯️</span><span>Đu Chart Online<span class="brand-sub">TIKTOK LIVE STREAM / THEANH</span></span></a><span class="local">LOCAL · <span id="serverState">Đang kết nối…</span></span></header>
 <div class="shell"><nav aria-label="Điều hướng"><button data-tab="operate" class="selected">Vận hành</button><button data-tab="rules">Luật tương tác</button><button data-tab="settings">Thiết lập & chạy thử</button><p class="nav-note">Chạy trên máy của bạn.<br>OBS phát hình và tiếng.<br>Tool xử lý tương tác.</p></nav>
 <main><div id="feedback" role="status" aria-live="polite" hidden></div>
 <section id="operate" class="tab"><div class="page-heading"><div><p class="eyebrow">PHÒNG ĐIỀU KHIỂN</p><h1>Sẵn sàng cho buổi LIVE</h1><p class="muted">Kết nối kênh, kiểm tra màn hình và quản lý từng lượt.</p></div><span class="tag" id="modeTag">Chưa kết nối TikTok</span></div>
 <div class="workspace"><div class="stack">
-<section class="panel"><div class="panel-heading"><h2>Kết nối kênh</h2><span class="tag" id="sourceStatus">Chưa kết nối</span></div><form id="connectForm" class="row"><label class="grow">Tài khoản TikTok<input id="username" placeholder="@tenkenhcuaban" autocomplete="off" maxlength="50" required></label><button class="primary" type="submit">Kết nối</button><button id="disconnect" type="button">Ngắt</button></form><p id="sourceError" class="small muted">Chỉ kết nối khi kênh đang phát LIVE. Tool không tự bắt đầu phát sóng.</p></section>
+<section class="panel"><div class="panel-heading"><h2>Kết nối kênh</h2><span class="tag" id="sourceStatus">Chưa kết nối</span></div><form id="connectForm" class="row"><label class="grow">Tài khoản TikTok đang LIVE<input id="username" placeholder="@tenkenhcuaban" autocomplete="off" maxlength="50" required></label><button class="primary" type="submit">Kết nối</button><button id="disconnect" type="button">Ngắt</button></form><p id="sourceError" class="small muted">Chỉ kết nối khi kênh đang phát LIVE. Tool không tự bắt đầu phát sóng.</p>
+<div class="admin-viral-subpanel" style="margin-top:12px;background:#16100c;border:1px solid rgba(223,189,116,0.32);border-radius:10px;padding:10px 12px">
+  <div class="row wrap" style="justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+    <strong style="color:#f3d28a;font-size:14px">🔐 Session TikTok Đã Đăng Nhập (Xác thực Webcast & Dự phòng)</strong>
+    <span class="tag good" id="sessionPoolTag">Đang tải Session…</span>
+  </div>
+  <div class="row wrap" style="gap:8px;align-items:center;margin-bottom:8px">
+    <label class="grow" style="margin:0;font-size:13px">Chế độ sử dụng Session
+      <select id="tiktokSessionMode" style="margin-top:4px">
+        <option value="auto">🔄 Tự động luân phiên 2 nick (Auto-Failover)</option>
+        <option value="none">⚪ Không dùng Session (Ẩn danh)</option>
+      </select>
+    </label>
+    <button type="button" id="btnVerifySessions" style="align-self:flex-end">🔍 Kiểm tra 2 Session</button>
+  </div>
+  <div id="tiktokSessionList" class="stack" style="gap:6px"></div>
+  <details style="margin-top:8px">
+    <summary class="small muted" style="cursor:pointer">➕ Nạp thêm / Cập nhật chuỗi Session TikTok (user|pass|...|cookie)</summary>
+    <div class="stack" style="gap:6px;margin-top:6px">
+      <textarea id="tiktokSessionRawInput" rows="3" placeholder="Dán 1 hoặc nhiều dòng user|pass|email|...|sessionid=... vào đây" style="width:100%;font-family:monospace;font-size:12px;background:#0f0b08;color:#f3d28a;border:1px solid #3f2e21;border-radius:6px;padding:8px"></textarea>
+      <div class="row"><button type="button" id="btnImportSessions" class="primary">Nạp & Xác thực Session</button></div>
+    </div>
+  </details>
+</div>
+</section>
 <section class="panel"><div class="panel-heading"><h2>Màn hình phát</h2><span class="tag" id="rendererStatus">Chưa mở</span></div><label>URL cho OBS Browser Source<div class="row"><input id="overlayUrl" readonly class="grow"><button id="copyUrl">Sao chép</button></div></label><div class="row wrap" style="gap:8px;align-items:center"><a href="/overlay" target="_blank" rel="noopener" class="button">Mở màn hình phát</a><a href="/live-test" target="_blank" rel="noopener" class="button primary" style="background:#b45309;color:#fff;border-color:#dfbd74;font-weight:bold">🖥️ Mở Phòng Test 1 Cửa Sổ (Admin + Khách Xem)</a><span class="muted small">1080 × 1920 · 30 FPS · <span id="audioStatus">Mở “Bật tiếng” trong màn hình phát</span></span></div></section>
 <section class="panel"><div class="panel-heading"><h2>Bảng Nến Stream (TradingView Chart)</h2><span class="tag good" id="activeChartTag">Vàng (XAU/USD) 15M</span></div><p class="small muted">Chọn cặp tiền và khung thời gian hiển thị trực tiếp trên màn hình OBS Live Stream:</p><div class="row wrap" style="gap:8px;margin-bottom:10px"><button type="button" class="chart-select-btn primary" data-symbol="FX:EURUSD">EUR/USD</button><button type="button" class="chart-select-btn" data-symbol="FX:GBPUSD">GBP/USD</button><button type="button" class="chart-select-btn" data-symbol="FX:USDJPY">USD/JPY</button><button type="button" class="chart-select-btn" data-symbol="OANDA:XAUUSD" style="color:#f3d28a;font-weight:bold">🌟 Vàng (XAU/USD)</button></div><div class="row wrap" style="gap:6px"><span class="small muted" style="align-self:center">Khung nến:</span><button type="button" class="tf-select-btn" data-tf="1">1M</button><button type="button" class="tf-select-btn" data-tf="5">5M</button><button type="button" class="tf-select-btn primary" data-tf="15">15M</button><button type="button" class="tf-select-btn" data-tf="60">1H</button><button type="button" class="tf-select-btn" data-tf="240">4H</button><button type="button" class="tf-select-btn" data-tf="D">1D</button></div></section>
 
@@ -17,6 +41,20 @@
     <span class="tag good" id="viralRoundTag">Kéo Co: Chờ hiệp mới</span>
   </div>
   <p class="small muted">Điều khiển các tính năng viral trực tiếp trên màn hình dọc 1080×1920: Thắp Nhang Gồng Lệnh, Kéo Co Bò vs Gấu, Vòng Xoay Định Mệnh, Còi Quét Thanh Khoản và Tin Nóng Phố Wall.</p>
+
+  <!-- Công tắc ON/OFF từng chức năng tự động chạy nền -->
+  <div class="admin-viral-subpanel" id="autoFeaturePanel">
+    <div class="row wrap" style="justify-content:space-between;align-items:center;gap:8px;margin:0">
+      <strong style="color:#f3d28a;font-size:15px">⏱️ Chế Độ Tự Động Chạy Nền (ON/OFF Từng Chức Năng)</strong>
+      <div class="row wrap" style="gap:6px;margin:0">
+        <button type="button" class="auto-bulk-btn" id="btnAutoAllOn">Bật hết tự động</button>
+        <button type="button" class="auto-bulk-btn quiet danger" id="btnAutoAllOff">Tắt hết tự động</button>
+      </div>
+    </div>
+    <p class="small muted" style="margin:4px 0 6px">Tắt mục nào thì mục đó sẽ không tự chạy nền nữa; khi bạn bấm nút thủ công vẫn hoạt động bình thường.</p>
+    <div id="autoFeatureGrid" class="auto-feature-grid"></div>
+    <p class="small muted" id="autoFeatureFeedback" style="margin:6px 0 0"></p>
+  </div>
 
   <!-- Khối Trợ Lực Forex: Tiếp Năng Lượng Gồng Lệnh & Bói Quẻ -->
   <div class="admin-viral-subpanel" style="background:#1b120c;border:2px solid #dfbd74;padding:12px 14px;border-radius:12px;margin-bottom:12px;box-shadow:0 4px 18px rgba(223,189,116,0.2)">
@@ -117,8 +155,9 @@
       </select>
       <button type="button" class="btn-bear" id="btnAdminComedy">🎬 Diễn tiểu phẩm (6s)</button>
       <button type="button" id="btnAdminLegend">🏛️ Mời huyền thoại trader phát biểu</button>
+      <button type="button" class="primary" id="btnAdminBut">🧙 Gọi Ông Bụt Hoàn Phí</button>
     </div>
-    <p class="small muted">Tiểu phẩm có hoạt cảnh, hiệu ứng và lời thoại TTS khi màn hình phát đã bật tiếng.</p>
+    <p class="small muted" id="adminButFeedback">Tiểu phẩm có hoạt cảnh, hiệu ứng và lời thoại TTS khi màn hình phát đã bật tiếng.</p>
   </div>
 </section>
 

@@ -246,7 +246,8 @@ test('Visual Frontend Suite: 8. Route /live-test HTTP 200 & Cockpit UI Integrity
   }
 });
 
-test('Visual Frontend Suite: 9. Đạo Tràng Auto-Initialization: Disciples Seated on Boot', async () => {
+test('Visual Frontend Suite: 9. Hall Base Companion Limit & Real TikTok Visitor Seating', async () => {
+  const { BASE_AMBIENT_SEATS, buildHallSeatAssignments } = await import('../public/js/hall.js');
   const app = createApp();
   app.server.listen(0, '127.0.0.1');
   await once(app.server, 'listening');
@@ -258,25 +259,30 @@ test('Visual Frontend Suite: 9. Đạo Tràng Auto-Initialization: Disciples Sea
     assert.equal(res.status, 200);
     const data = await res.json();
 
-    // Verify hall mode and capacity
+    // Server boots cleanly in live mode without fake 100-person demo filler
     assert.ok(data.hall, 'Missing hall in state snapshot');
     assert.equal(data.hall.capacity, 28, 'Hall capacity must be 28');
+    assert.equal(data.hall.mode, 'live');
+    assert.equal(data.hall.totalParticipants, 0);
+    assert.equal(data.hall.leaderboard.length, 0);
 
-    // Verify hall is auto-populated with worshippers/disciples in meditation
-    assert.ok(Array.isArray(data.hall.seats), 'hall.seats must be an array');
-    const activeSeats = data.hall.seats.filter(Boolean);
-    assert.ok(activeSeats.length > 0, 'Temple hall must have disciples seated on initial boot');
-    assert.ok(activeSeats.length <= 28, 'Seated disciples cannot exceed 28');
-    assert.ok(data.hall.totalParticipants > 0, 'Total hall participants must be greater than 0');
+    // Visual layer seats only 3-4 base companion traders when 0 real viewers have arrived
+    assert.ok(BASE_AMBIENT_SEATS.length >= 3 && BASE_AMBIENT_SEATS.length <= 4);
+    const bootSeats = buildHallSeatAssignments(data.hall.seats).filter(Boolean);
+    assert.equal(bootSeats.length, 4);
+    assert.equal(bootSeats.filter(u => u.isAmbient).length, 4);
 
-    // Verify leaders exist
-    assert.ok(Array.isArray(data.hall.leaderboard), 'hall.leaderboard must be an array');
-    assert.ok(data.hall.leaderboard.length > 0, 'Hall must have leaders/donors');
+    // Real TikTok visitors smoothly replace base ambient seats; at 4+ real visitors 0 ambient remain
+    const twoReal = [null, null, null, null, { id: 'tt1', name: 'Khách A', coins: 0 }, { id: 'tt2', name: 'Khách B', coins: 0 }];
+    const withTwoReal = buildHallSeatAssignments(twoReal).filter(Boolean);
+    assert.equal(withTwoReal.length, 4);
+    assert.equal(withTwoReal.filter(u => !u.isAmbient).length, 2);
+    assert.equal(withTwoReal.filter(u => u.isAmbient).length, 2);
 
-    // Disciples have valid identifiers and names
-    const firstSeated = activeSeats[0];
-    assert.ok(firstSeated.id, 'Disciples must have an id');
-    assert.ok(firstSeated.name, 'Disciples must have a name');
+    const fiveReal = [null, null, null, null, ...Array.from({ length: 5 }, (_, i) => ({ id: `tt${i}`, name: `Khách ${i}`, coins: 0 }))];
+    const withFiveReal = buildHallSeatAssignments(fiveReal).filter(Boolean);
+    assert.equal(withFiveReal.length, 5);
+    assert.equal(withFiveReal.filter(u => u.isAmbient).length, 0);
   } finally {
     await app.close();
   }

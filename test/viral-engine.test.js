@@ -586,6 +586,45 @@ test('9. Audience Interaction Pipeline: Cumulative 1000 likes, Follow dedup, 7 C
     const slJson = await slRes.json();
     assert.equal(slJson.ok, true);
     assert.ok(slJson.clicks >= 2);
+
+    // 5. Ông Bụt fee-rebate cameo endpoint & WebSocket broadcast (manual works even when autoFeatures OFF)
+    const stateNow = await (await fetch(`${baseUrl}/api/state`)).json();
+    const allAutoOff = Object.fromEntries(
+      Object.keys(stateNow.config.autoFeatures).map(k => [k, false])
+    );
+    await fetch(`${baseUrl}/api/config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...stateNow.config, autoFeatures: allAutoOff })
+    });
+
+    const butRes = await fetch(`${baseUrl}/api/viral/but/trigger`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    assert.equal(butRes.status, 200);
+    const butJson = await butRes.json();
+    assert.equal(butJson.ok, true);
+    assert.equal(butJson.phone, undefined);
+    assert.ok(butJson.contact.toLowerCase().includes('bio'));
+    assert.ok(butJson.text.toLowerCase().includes('hoàn phí'));
+    assert.ok(butJson.text.toLowerCase().includes('bio'));
+    assert.ok(!/\d{4,}/.test(butJson.text));
+    assert.ok(!/back\s*com/i.test(butJson.text));
+
+    const comedyManual = await fetch(`${baseUrl}/api/viral/comedy/trigger`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario: 'wife_chase' })
+    });
+    assert.equal(comedyManual.status, 200);
+    assert.equal((await comedyManual.json()).ok, true);
+
+    await new Promise(r => setTimeout(r, 60));
+    const butMsgs = client.messages.filter(m => m.type === 'but_visit_broadcast');
+    assert.ok(butMsgs.length >= 1);
+    assert.equal(butMsgs[butMsgs.length - 1].data.text, butJson.text);
   } finally {
     client.ws.close();
     await app.close();

@@ -274,11 +274,36 @@ test('Vietnamese Voice Engine: 7. Stop & Aborted Audio Do Not Trigger Browser Fa
     // Overlay primary & embedded mute integration checks
     const overlayJs = fs.readFileSync(path.join(rootDir, 'public', 'js', 'overlay.js'), 'utf8');
     const overlayHtml = fs.readFileSync(path.join(rootDir, 'public', 'overlay.html'), 'utf8');
+    const adminHtml = fs.readFileSync(path.join(rootDir, 'public', 'admin.html'), 'utf8');
     const liveTestHtml = fs.readFileSync(path.join(rootDir, 'public', 'live-test.html'), 'utf8');
+    const overlayCss = fs.readFileSync(path.join(rootDir, 'public', 'overlay-v2.css'), 'utf8');
     assert.ok(overlayJs.includes('isPrimary() && !embeddedMuted'), 'Overlay voice Proxy must gate on isPrimary() && !embeddedMuted');
     assert.ok(overlayJs.includes('shouldSpeakCelebration'), 'Overlay must deduplicate social celebration TTS');
-    assert.ok(overlayHtml.includes('overlay.js?v=hang-rong-v7.6'), 'overlay.html must bump overlay.js cache buster');
+    assert.ok(overlayJs.includes('autoFeatures?.comedy'), 'Overlay comedy interval must respect autoFeatures.comedy');
+    assert.ok(overlayJs.includes('autoFeatures?.legend'), 'Overlay legend interval must respect autoFeatures.legend');
+    assert.ok(overlayHtml.includes('overlay.js?v=hang-rong-v8.2'), 'overlay.html must bump overlay.js cache buster');
+    assert.ok(overlayHtml.includes('id="butVisitLayer"'), 'overlay.html must render #butVisitLayer');
+    assert.ok(!overlayHtml.includes('0866'), 'overlay.html must not expose phone number');
+    assert.ok(!adminHtml.includes('id="butPhone"'), 'admin.html must not render phone input');
+    assert.ok(adminHtml.includes('id="autoFeatureGrid"'), 'admin.html must render per-feature auto ON/OFF grid');
+    assert.match(overlayCss, /\.comedy-top-banner\s*\{[^}]*left:\s*0;\s*right:\s*0;\s*margin:\s*0 auto;/s, 'comedy banner must stay horizontally centered alongside comic-pop scale animation');
     assert.ok(liveTestHtml.includes("type: 'set-embedded-preview', muted: true"), 'live-test.html must mute embedded overlay preview');
+    assert.ok(liveTestHtml.includes('id="btnTriggerBut"'), 'live-test.html must include Ông Bụt test button');
+    assert.ok(!liveTestHtml.includes('id="inputButPhone"'), 'live-test.html must not render phone input');
+
+    // Ông Bụt lines validation: mentions "hoàn phí" and "bio", never includes phone digits or "backcom"
+    const { BUT_REWARD_LINES, BUT_CONTACT_DISPLAY, pickButAppearance, formatButSpeechText } = await import('../public/js/but-lines.js');
+    assert.ok(BUT_REWARD_LINES.length >= 12);
+    for (const line of BUT_REWARD_LINES) {
+      assert.ok(line.toLowerCase().includes('hoàn phí'), `Line missing "hoàn phí": ${line}`);
+      assert.ok(line.toLowerCase().includes('bio'), `Line missing "bio": ${line}`);
+      assert.ok(!/\d{4,}/.test(line), `Line must not include phone digits: ${line}`);
+      assert.ok(!/back\s*com/i.test(line), `Line must not contain backcom: ${line}`);
+    }
+    const picked = pickButAppearance({ index: 8 });
+    assert.equal(picked.contact, BUT_CONTACT_DISPLAY);
+    assert.ok(picked.speechText.includes('A đến Z'));
+    assert.ok(!/\d{4,}/.test(formatButSpeechText(picked.text)));
 
     // Tiered gift appreciation and non-rose "Hoa Sen" gift name preservation
     const lotusText = formatGiftText('Tuấn', 'Hoa Sen Chốt Lời', 1, 5);

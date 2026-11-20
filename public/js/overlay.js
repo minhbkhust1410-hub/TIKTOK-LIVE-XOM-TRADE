@@ -1,13 +1,14 @@
 import { ART, createPose } from './temple-art.js?v=hang-rong-v3.2';
 import { TempleParticleEngine } from './particles.js?v=hang-rong-v3.1';
 import { sampleRitual } from './rituals.js?v=hang-rong-v2.0';
-import { createHall } from './hall.js?v=hang-rong-v5.8';
+import { createHall } from './hall.js?v=hang-rong-v5.9';
 import { createRitualStage } from './ritual-stage.js?v=hang-rong-v2.0';
 import { renderRitualBoard } from './ritual-board.js?v=hang-rong-v2.0';
 import { createNarration } from './narration.js?v=hang-rong-v2.0';
 import { musicURL } from './music-files.js?v=hang-rong-v2.0';
-import { createVoiceEngine } from './voice-engine.js?v=voice-queue-v3.6';
+import { createVoiceEngine } from './voice-engine.js?v=voice-queue-v3.7';
 import { resolveWsUrl } from './ws-url.js';
+import { pickButAppearance, BUT_CONTACT_DISPLAY } from './but-lines.js?v=but-v3';
 
 const $ = id => document.getElementById(id);
 const preview = location.pathname === '/preview';
@@ -65,7 +66,7 @@ const replayableOverlayEvents = new Set([
   'tug_state_broadcast', 'tug_result_broadcast', 'wheel_result_broadcast',
   'siren_alert_broadcast', 'siren_resolved_broadcast', 'breaking_news_broadcast',
   'street_comedy_broadcast', 'trader_legend_broadcast', 'trader_walk_in',
-  'thousand_likes_broadcast', 'new_follower_broadcast'
+  'but_visit_broadcast', 'thousand_likes_broadcast', 'new_follower_broadcast'
 ]);
 
 function acceptOverlayEvent(msg) {
@@ -117,6 +118,7 @@ function dispatchRealtimeEvent(msg) {
   else if (msg.type === 'street_comedy_broadcast') triggerStreetComedy(msg.data?.scenario || msg.data?.type);
   else if (msg.type === 'trader_legend_broadcast') triggerLegendProclamation(msg.data?.legend || msg.data);
   else if (msg.type === 'trader_walk_in') triggerTraderWalkIn(msg.data);
+  else if (msg.type === 'but_visit_broadcast') triggerButVisit(msg.data);
   // Receipt is sent only after the local visual handler has started. This lets
   // the remote controller distinguish “request reached server” from “OBS has
   // actually received and begun showing the command”.
@@ -280,6 +282,9 @@ window.addEventListener('message', e => {
   }
   if (e.data?.type === 'trigger-trader-walk-in') {
     triggerTraderWalkIn(e.data);
+  }
+  if (e.data?.type === 'trigger-but-visit') {
+    triggerButVisit(e.data);
   }
   if (e.data?.type === 'trigger-follower-celebration') {
     handleNewFollowerCelebration(e.data);
@@ -677,7 +682,12 @@ function render(s) {
   $('ranking').hidden = !s.config.showLeaderboard;
   $('sessionTotal').textContent = s.hall?.mode === 'demo' ? 'Xóm Trade mô phỏng' : `${s.hall?.totalCoins.toLocaleString('vi-VN') || 0} xu trong phiên`;
   hall.render(s.hall);
-  $('hallRoster').textContent = `Xóm Trade ${s.hall?.totalParticipants || 0} người · Nhóm ${s.hall?.rotationPage || 1}/${s.hall?.rotationPages || 1}`;
+  const totalReal = s.hall?.totalParticipants || 0;
+  $('hallRoster').textContent = s.hall?.mode === 'demo'
+    ? `Xóm Trade mô phỏng · ${totalReal} người`
+    : totalReal > 0
+      ? `Xóm Trade LIVE · ${totalReal} khách${s.hall?.rotationPages > 1 ? ` · Nhóm ${s.hall.rotationPage}/${s.hall.rotationPages}` : ''}`
+      : 'Xóm Trade · Đang đón khách TikTok LIVE';
 
   const activity = s.interactions?.current;
   $('interactionName').textContent = activity?.nickname || '';
@@ -1825,6 +1835,60 @@ function triggerLegendProclamation(legendData = null) {
   }, 9000);
 }
 
+let butVisitTimeout = null;
+function triggerButVisit(data = null) {
+  const layer = $('butVisitLayer');
+  const track = $('butRunnerTrack');
+  if (!layer || !track) return;
+
+  if (butVisitTimeout) {
+    clearTimeout(butVisitTimeout);
+    butVisitTimeout = null;
+  }
+
+  const line = (data && data.text)
+    ? { text: data.text, speechText: data.speechText || data.text, contact: data.contact || BUT_CONTACT_DISPLAY }
+    : pickButAppearance();
+
+  if ($('butSpeechText')) $('butSpeechText').textContent = `"${line.text}"`;
+  const pillEl = $('butPhonePill');
+  if (pillEl) {
+    pillEl.textContent = '📌 Liên hệ hoàn phí: ';
+    const strong = document.createElement('strong');
+    strong.textContent = line.contact || BUT_CONTACT_DISPLAY;
+    pillEl.append(strong);
+  }
+
+  layer.hidden = false;
+  layer.removeAttribute('hidden');
+  layer.style.display = 'block';
+  track.classList.remove('patrolling');
+  void track.offsetWidth;
+  track.classList.add('patrolling');
+  hall.setMood('celebrate', 9600);
+
+  try { tone('bell'); } catch {}
+  try {
+    if (particles && typeof particles.spawnComedyBursts === 'function') {
+      particles.spawnComedyBursts('🪙', 540, 1280, 22);
+    }
+  } catch {}
+  try {
+    if (voiceEngine && typeof voiceEngine.speakBut === 'function') {
+      voiceEngine.speakBut(line.speechText || line.text);
+    }
+  } catch {}
+
+  butVisitTimeout = setTimeout(() => {
+    track.classList.remove('patrolling');
+    layer.hidden = true;
+    layer.style.display = '';
+    butVisitTimeout = null;
+  }, 9800);
+}
+
+window.triggerButVisit = triggerButVisit;
+
 window.triggerStreetComedy = triggerStreetComedy;
 window.triggerLegendProclamation = triggerLegendProclamation;
 
@@ -1840,7 +1904,7 @@ const LEGEND_WHISPERS = [
 ];
 let legendWhisperIndex = 0;
 function shareLegendWhisper() {
-  if (document.hidden) return;
+  if (document.hidden || state?.config?.autoFeatures?.legend === false) return;
   const item = LEGEND_WHISPERS[legendWhisperIndex++ % LEGEND_WHISPERS.length];
   addTickerItem(`💬 ${item.author}: ${item.text}`);
   try {
@@ -1854,13 +1918,13 @@ setInterval(shareLegendWhisper, 105000);
 
 // Autonomous periodic triggers for background street atmosphere
 setInterval(() => {
-  if (!document.hidden) {
+  if (!document.hidden && state?.config?.autoFeatures?.comedy !== false) {
     triggerStreetComedy();
   }
 }, 65000 + Math.floor(Math.random() * 25000));
 
 setInterval(() => {
-  if (!document.hidden) {
+  if (!document.hidden && state?.config?.autoFeatures?.legend !== false) {
     triggerLegendProclamation();
   }
 }, 130000 + Math.floor(Math.random() * 30000));
@@ -2057,6 +2121,10 @@ async function connect() {
 
       if (msg.type === 'trader_walk_in') {
         triggerTraderWalkIn(msg.data);
+      }
+
+      if (msg.type === 'but_visit_broadcast') {
+        triggerButVisit(msg.data);
       }
 
       if (msg.type === 'voice_speak') {

@@ -8,13 +8,14 @@ import { spawn } from 'node:child_process';
 import { WebSocketServer, WebSocket } from 'ws';
 import { LiveEngine, validateConfig, migrateConfig, normalizeEvent, ACTIONS } from './src/core.js';
 import { JsonStore } from './src/store.js';
-import { TikTokSource } from './src/tiktok.js';
+import { TikTokSource, parseTikTokSessionLine } from './src/tiktok.js';
 import { listMusic } from './src/music.js';
 import { RoomManager, SUPPORTED_SYMBOLS, SUPPORTED_TIMEFRAMES } from './src/rooms.js';
 import { ScoreLedger, ACTIONS as FOREX_ACTIONS } from './src/score.js';
 import { ViralEngine, detectCommentIntent, detectSirenRescueIntent } from './src/viral-engine.js';
 import { AmbientEngine } from './src/ambient.js';
 import { getOrSynthesizeTts, VOICES, prewarmTtsCache } from './src/tts-engine.js';
+import { pickButAppearance } from './public/js/but-lines.js';
 
 const GIFT_TUG_POWER_TIERS = [
   { minCoins: 500, power: 1000, defaultName: 'Đại Lễ Kim Cương' },
@@ -75,9 +76,6 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
   const scoreLedger = new ScoreLedger(dataDir);
   const roomManager = new RoomManager(scoreLedger);
   const engine = new LiveEngine(config, stats);
-  if (!stats?.session?.users || Object.keys(stats.session.users).length === 0) {
-    engine.showHallDemo();
-  }
   const viralEngine = new ViralEngine();
   const app = express(); app.set('trust proxy', 1); const server = http.createServer(app); const wss = new WebSocketServer({ noServer: true, maxPayload: 16384 });
   const clients = new Map(); let source;
@@ -133,7 +131,7 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
     'tug_state_broadcast', 'tug_result_broadcast', 'wheel_result_broadcast',
     'siren_alert_broadcast', 'siren_resolved_broadcast', 'breaking_news_broadcast',
     'street_comedy_broadcast', 'trader_legend_broadcast', 'trader_walk_in',
-    'thousand_likes_broadcast', 'new_follower_broadcast'
+    'but_visit_broadcast', 'thousand_likes_broadcast', 'new_follower_broadcast'
   ]);
   const eventLifetime = (type, data) => {
     if (type === 'siren_alert_broadcast') return Math.max(15000, Math.min(60000, Number(data?.durationMs) || 15000));
@@ -173,6 +171,7 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
   const snapshot = () => ({
     ...engine.snapshot(),
     source: source?.state || {},
+    tiktokSessions: source?.getPublicSessionState() || { mode: 'auto', accounts: [] },
     actions: ACTIONS,
     audioReady: [...clients.values()].some(c => c.id === engine.renderer && c.audio),
     clients: [...clients].filter(([, c]) => c.ready && c.role === 'overlay').length,
@@ -352,7 +351,24 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
   };
   let broadcastTimer=null,closing=false;
   const changed = () => { if(!closing && !broadcastTimer) broadcastTimer=setTimeout(()=>{broadcastTimer=null;broadcast();},80); };
-  source = new TikTokSource(engine, changed);
+  let tiktokSessions = store.read('tiktok-sessions', null);
+  if (!tiktokSessions || !Array.isArray(tiktokSessions.accounts)) {
+    const seedPath = path.join(root, 'data', 'tiktok-sessions.json');
+    if (fs.existsSync(seedPath)) {
+      try { tiktokSessions = JSON.parse(fs.readFileSync(seedPath, 'utf8')); } catch {}
+    }
+    if (!tiktokSessions || !Array.isArray(tiktokSessions.accounts)) {
+      tiktokSessions = { mode: 'auto', accounts: [] };
+    }
+  }
+  const saveTikTokSessions = () => {
+    try {
+      if (!store.blocked.has('tiktok-sessions')) {
+        store.write('tiktok-sessions', source.sessionConfig);
+      }
+    } catch {}
+  };
+  source = new TikTokSource(engine, changed, tiktokSessions);
   ambientEngine = new AmbientEngine({
     engine,
     roomManager,
@@ -769,6 +785,34 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
     res.json({ ok: true, ...payload });
   });
 
+  // Randomized ~10-minute (9–11m) Ông Bụt fee-rebate patrol scheduler
+  let butVisitTimer = null;
+  let lastButLineIndex = -1;
+  const emitButVisit = (options = {}) => {
+    const picked = pickButAppearance({ ...options, lastIndex: lastButLineIndex });
+    if (picked.index >= 0) lastButLineIndex = picked.index;
+    const payload = { ...picked, durationMs: 9600, timestamp: Date.now() };
+    broadcastAll('but_visit_broadcast', payload);
+    return payload;
+  };
+  const scheduleNextButVisit = (delayMs = 540000 + Math.floor(Math.random() * 120000)) => {
+    clearTimeout(butVisitTimer);
+    if (closing) return;
+    butVisitTimer = setTimeout(() => {
+      if (closing) return;
+      if (engine.config?.autoFeatures?.but !== false) {
+        if (engine.current?.action === 'grand' || viralEngine.siren.active) {
+          scheduleNextButVisit(15000);
+          return;
+        }
+        emitButVisit({ automatic: true });
+      }
+      scheduleNextButVisit();
+    }, delayMs);
+    butVisitTimer.unref?.();
+  };
+  scheduleNextButVisit();
+
   // Solemn Deadpan Trader Legend Proclamation Endpoint
   app.post('/api/viral/legend/proclaim', (req, res) => {
     const { author, title, quote, badge } = req.body || {};
@@ -782,6 +826,17 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
       timestamp: Date.now()
     };
     broadcastAll('trader_legend_broadcast', payload);
+    res.json({ ok: true, ...payload });
+  });
+
+  app.post('/api/viral/but/trigger', (req, res) => {
+    const { index, text, speechText } = req.body || {};
+    const payload = emitButVisit({
+      index: index != null ? Number(index) : null,
+      text,
+      speechText
+    });
+    scheduleNextButVisit();
     res.json({ ok: true, ...payload });
   });
 
@@ -835,6 +890,49 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
   });
   app.post('/api/connect', async (req, res, next) => { try { await source.connect(req.body.username); res.json({ ok: true }); } catch (e) { next(e); } });
   app.post('/api/disconnect', (_req, res) => { source.disconnect(); res.json({ ok: true }); });
+  app.get('/api/tiktok/sessions', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(source.getPublicSessionState());
+  });
+  app.post('/api/tiktok/sessions/mode', (req, res) => {
+    const mode = String(req.body?.mode || 'auto').trim() || 'auto';
+    source.setSessionConfig({ ...source.sessionConfig, mode });
+    saveTikTokSessions();
+    changed();
+    res.json({ ok: true, tiktokSessions: source.getPublicSessionState() });
+  });
+  app.post('/api/tiktok/sessions/verify', async (req, res) => {
+    const targetId = String(req.body?.id || '').trim();
+    const results = await source.verifySessions(targetId);
+    saveTikTokSessions();
+    const activeCount = source.sessionConfig.accounts.filter(a => a.status === 'active').length;
+    engine.log('info', `Đã kiểm tra Session TikTok: ${activeCount}/${source.sessionConfig.accounts.length} nick hoạt động tốt.`);
+    res.json({ ok: true, results, tiktokSessions: source.getPublicSessionState() });
+  });
+  app.post('/api/tiktok/sessions/import', async (req, res) => {
+    const raw = String(req.body?.raw || '').trim();
+    if (!raw) return res.status(400).json({ error: 'Vui lòng dán chuỗi Session / Cookie của nick TikTok.' });
+    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const imported = [];
+    for (const line of lines) {
+      const parsed = parseTikTokSessionLine(line);
+      if (parsed) imported.push(parsed);
+    }
+    if (!imported.length) {
+      return res.status(400).json({ error: 'Không tìm thấy sessionid hợp lệ trong chuỗi đã nhập.' });
+    }
+    const existing = [...source.sessionConfig.accounts];
+    for (const item of imported) {
+      const idx = existing.findIndex(a => a.id === item.id || a.username === item.username || a.sessionId === item.sessionId);
+      if (idx >= 0) existing[idx] = { ...existing[idx], ...item };
+      else existing.push(item);
+    }
+    source.setSessionConfig({ ...source.sessionConfig, accounts: existing });
+    const results = await source.verifySessions();
+    saveTikTokSessions();
+    engine.log('info', `Đã nạp và xác thực ${imported.length} Session TikTok mới.`);
+    res.json({ ok: true, importedCount: imported.length, results, tiktokSessions: source.getPublicSessionState() });
+  });
   app.post('/api/control', (req, res) => { engine.control(req.body.command, req.body.id); res.json({ ok: true }); });
   // High-Fidelity Vietnamese Neural TTS Streaming Endpoints (Free Microsoft Edge Neural Engine)
   app.get('/api/tts/voices', (_req, res) => {
@@ -1323,6 +1421,7 @@ export function createApp({ dataDir = process.env.TILITA_DATA_DIR || path.join(r
   function close() {
     closing = true;
     clearTimeout(broadcastTimer);
+    clearTimeout(butVisitTimer);
     ambientEngine.close();
     viralEngine.close();
     engine.flushParticipants(true);

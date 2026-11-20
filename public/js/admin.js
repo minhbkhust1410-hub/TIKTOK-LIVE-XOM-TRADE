@@ -1,4 +1,4 @@
-import { RUNTIME_REVISION } from './experience.js?v=wooden-v2.7';
+import { RUNTIME_REVISION, AUTO_FEATURE_META, AUTO_FEATURE_KEYS } from './experience.js?v=wooden-v2.8';
 import { resolveWsUrl } from './ws-url.js';
 const $ = id => document.getElementById(id);
 const escape = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -75,6 +75,85 @@ document.querySelectorAll('.tf-select-btn').forEach(btn => {
 });
 $('connectForm').onsubmit = e => { e.preventDefault(); attempt(async () => { const username = $('username').value.trim().replace(/^@/, ''); if (!/^[\w.]{2,50}$/.test(username)) throw new Error('Nhập @username hợp lệ, không nhập đường link.'); await api('config', { ...state.config, username }, 'PUT'); await api('connect', { username }); feedback('Đang thử kết nối. Xem trạng thái kênh bên dưới.'); }); };
 $('disconnect').onclick = () => attempt(() => api('disconnect', {}));
+function renderTikTokSessions(sessionState, sourceState) {
+  const listEl = $('tiktokSessionList');
+  const selectEl = $('tiktokSessionMode');
+  const tagEl = $('sessionPoolTag');
+  if (!listEl || !selectEl || !tagEl) return;
+  const accounts = sessionState?.accounts || [];
+  const mode = sessionState?.mode || 'auto';
+  const activeCount = accounts.filter(a => a.status === 'active').length;
+  tag('sessionPoolTag', accounts.length ? `${activeCount}/${accounts.length} Session sẵn sàng` : 'Chưa có Session', activeCount > 0, accounts.length > 0 && activeCount === 0);
+
+  const makeOpt = (val, label) => { const o = document.createElement('option'); o.value = val; o.textContent = label; return o; };
+  selectEl.replaceChildren(
+    makeOpt('auto', `🔄 Tự động luân phiên ${accounts.length || 2} nick (Auto-Failover)`),
+    ...accounts.map((a, idx) => makeOpt(a.id, `🟢 Nick ${idx + 1}: @${a.username} (${a.ttTargetIdc || 'alisg'})`)),
+    makeOpt('none', '⚪ Không dùng Session (Ẩn danh)')
+  );
+  selectEl.value = [...selectEl.options].some(o => o.value === mode) ? mode : 'auto';
+
+  if (!accounts.length) {
+    listEl.innerHTML = '<p class="small muted">Chưa có Session TikTok nào được nạp.</p>';
+    return;
+  }
+  const activeNick = sourceState?.sessionAccount || sessionState?.activeUsername || '';
+  listEl.innerHTML = accounts.map((a, idx) => {
+    const isCurrent = activeNick === a.username && mode !== 'none';
+    const statusBadge = a.status === 'active'
+      ? '<span class="tag good" style="font-size:11px;padding:2px 8px">ĐÃ ĐĂNG NHẬP</span>'
+      : a.status === 'expired'
+        ? '<span class="tag warn" style="font-size:11px;padding:2px 8px">HẾT HẠN</span>'
+        : '<span class="tag" style="font-size:11px;padding:2px 8px">CHƯA KIỂM TRA</span>';
+    const expDate = a.expiresAt ? new Date(a.expiresAt).toLocaleDateString('vi-VN') : '2027';
+    return `<div class="queue-item" style="background:${isCurrent ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)'};border:1px solid ${isCurrent ? 'rgba(52,211,153,0.45)' : 'rgba(255,255,255,0.08)'};padding:8px 10px;border-radius:8px">
+      <span class="number">${idx + 1}</span>
+      <div class="grow">
+        <div class="row wrap" style="gap:6px;align-items:center">
+          <strong style="color:#f3d28a">@${escape(a.username)}</strong>
+          ${statusBadge}
+          ${isCurrent ? '<span class="tag good" style="font-size:11px;padding:2px 6px">ĐANG DÙNG</span>' : ''}
+        </div>
+        <p class="small muted" style="margin:2px 0 0">UID: ${escape(a.userId || 'N/A')} · Session: <code>${escape(a.sessionIdMasked)}</code> · IDC: <b>${escape(a.ttTargetIdc)}</b> · Hạn: ${escape(expDate)}</p>
+      </div>
+      <button type="button" class="quiet" data-use-session-channel="${escape(a.username)}" title="Điền @${escape(a.username)} vào ô kết nối kênh">Chọn kênh</button>
+    </div>`;
+  }).join('');
+}
+$('tiktokSessionMode')?.addEventListener('change', () => attempt(async () => {
+  const mode = $('tiktokSessionMode').value;
+  const res = await api('tiktok/sessions/mode', { mode });
+  renderTikTokSessions(res.tiktokSessions, state?.source);
+  feedback(mode === 'auto' ? 'Đã bật tự động luân phiên Session 2 nick TikTok.' : mode === 'none' ? 'Đã chuyển sang kết nối ẩn danh (không dùng Session).' : `Đã chọn Session @${mode}.`);
+}));
+$('btnVerifySessions')?.addEventListener('click', () => attempt(async () => {
+  const btn = $('btnVerifySessions');
+  btn.disabled = true;
+  btn.textContent = 'Đang kiểm tra…';
+  try {
+    const res = await api('tiktok/sessions/verify', {});
+    renderTikTokSessions(res.tiktokSessions, state?.source);
+    const okCount = (res.results || []).filter(r => r.ok).length;
+    feedback(`Đã xác thực trực tiếp với TikTok Passport: ${okCount}/${(res.results || []).length} nick đang đăng nhập tốt!`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 Kiểm tra 2 Session';
+  }
+}));
+$('btnImportSessions')?.addEventListener('click', () => attempt(async () => {
+  const raw = $('tiktokSessionRawInput')?.value?.trim() || '';
+  if (!raw) throw new Error('Vui lòng dán chuỗi Session / Cookie của nick TikTok vào ô nhập.');
+  const res = await api('tiktok/sessions/import', { raw });
+  $('tiktokSessionRawInput').value = '';
+  renderTikTokSessions(res.tiktokSessions, state?.source);
+  feedback(`Đã nạp và đăng nhập thành công ${res.importedCount} Session TikTok!`);
+}));
+$('tiktokSessionList')?.addEventListener('click', e => {
+  const btn = e.target.closest('[data-use-session-channel]');
+  if (!btn) return;
+  $('username').value = btn.dataset.useSessionChannel;
+  feedback(`Đã điền @${btn.dataset.useSessionChannel} vào ô Tài khoản TikTok.`);
+});
 for (const [id, getCommand] of [['pause', () => state.paused ? 'resume' : 'pause'], ['accept', () => state.accepting ? 'stop-accept' : 'accept'], ['skip', () => 'skip']]) $(id).onclick = () => attempt(() => api('control', { command: getCommand() }));
 $('clearQueue').onclick = () => { if (confirm('Xóa toàn bộ lượt đang chờ? Lượt đang diễn vẫn tiếp tục.')) attempt(() => api('control', { command: 'clear' })); };
 $('queue').onclick = e => { const button = e.target.closest('[data-remove]'); if (button) attempt(() => api('control', { command: 'remove', id: button.dataset.remove })); };
@@ -88,6 +167,7 @@ function render(s) {
   $('likeStatus').textContent = lastLike ? `Tim thật đã nhận: ${num(s.participation.receivedLikes)} · ${lastLike.nickname}: +${lastLike.count} tim, ${lastLike.joined ? 1 : lastLike.progress}/1 · ${likeStatuses[lastLike.status] || lastLike.status}${lastLike.seatStatus === 'seated' ? ' · Đã kéo ghế ngồi' : lastLike.seatStatus === 'rotating' ? ' · Đã vào Xóm Trade, luân phiên hiển thị' : ''}` : 'Chưa nhận gói tim thật trong phiên này. Tim mô phỏng không tính vào đây.';
   if (!initialized) { initialized = true; $('username').value = s.config.username; draftRules = structuredClone(s.config.rules.filter(r => r.type === 'comment')); renderRules(); fillSettings(); }
   $('boardVisible').checked = s.config.showRitualBoard; $('topVisible').checked = s.config.showLeaderboard;
+  renderAutoFeatures(s.config.autoFeatures);
   $('fortuneAudioStatus').textContent = `${s.fortuneAudio.ready}/${s.fortuneAudio.total} lời xăm có audio · ${s.fortuneAudio.voice}${s.fortuneAudio.missing.length ? ' · Thiếu: ' + s.fortuneAudio.missing.join(', ') : ' · Sẵn sàng phát local'}`;
   $('fortuneAudioStatus').classList.toggle('error', s.fortuneAudio.ready !== s.fortuneAudio.total);
   if (!$('tierSummary').children.length) $('tierSummary').innerHTML = s.config.giftTiers.map((t, i) => `<span><b>${t.min}${i === 6 ? '+' : ''} xu</b> ${escape(t.label)}</span>`).join('');
@@ -105,7 +185,9 @@ function render(s) {
   const sourceLabels = { disconnected: 'Chưa kết nối', connecting: 'Đang kết nối…', retrying: 'Đang thử lại…', connected: 'Đã kết nối', error: 'Kết nối lỗi' };
   tag('sourceStatus', sourceLabels[s.source.status] || 'Chưa kết nối', connected, s.source.status === 'retrying');
   tag('modeTag', connected ? `LIVE @${s.source.username}` : 'Chưa kết nối TikTok', connected);
-  $('sourceError').textContent = s.source.error || (connected ? `Phòng ${s.source.roomId}. Tool đang nhận sự kiện; OBS quản lý phát sóng riêng.` : 'Chỉ kết nối khi kênh đang phát LIVE. Tool không tự bắt đầu phát sóng.');
+  const viaSession = s.source.sessionAccount ? ` · Session @${s.source.sessionAccount} (${s.source.sessionIdc || 'alisg'})` : '';
+  $('sourceError').textContent = s.source.error || (connected ? `Phòng ${s.source.roomId}${viaSession}. Tool đang nhận sự kiện; OBS quản lý phát sóng riêng.` : `Chỉ kết nối khi kênh đang phát LIVE. Tool không tự bắt đầu phát sóng.${viaSession}`);
+  renderTikTokSessions(s.tiktokSessions, s.source);
   tag('rendererStatus', s.renderer ? `Đã mở · ${s.clients} màn hình` : 'Chưa mở', !!s.renderer);
   $('audioStatus').textContent = s.audioReady ? 'Âm thanh đã sẵn sàng' : 'Mở “Bật tiếng” trong màn hình phát';
   tag('playStatus', s.paused ? 'Đang tạm dừng' : !s.renderer ? 'Chờ màn hình phát' : s.current ? 'Đang diễn' : 'Đang chờ', !!s.current, s.paused);
@@ -133,7 +215,7 @@ $('ruleEditor').onclick = e => { const b = e.target.closest('[data-rule]'); if (
 $('addRule').onclick = () => { draftRules.push({ id: crypto.randomUUID(), type: 'comment', enabled: true, match: '', action: 'incense', priority: 0 }); renderRules(); };
 $('saveRules').onclick = () => attempt(async () => { await api('config', { ...state.config, rules: draftRules }, 'PUT'); feedback('Đã lưu luật. Các lượt đã xếp giữ hành động cũ.'); });
 function showAudioPercent(key) { $(key + 'Value').value = $(key).value + '%'; if (key === 'musicVolume') $('musicPercent').value = $(key).value; }
-function fillSettings() { renderMusicOptions(); for (const key of ['sceneTitle', 'musicFile', 'queueLimit', 'commentCooldownSec']) $(key).value = state.config[key]; for (const key of ['volume','musicVolume','voiceVolume']) { $(key).value = Math.round(state.config[key] * 100); showAudioPercent(key); } for (const kind of ['like', 'follow', 'share']) $('social-' + kind).checked = state.config.social[kind]; $('voiceEnabled').checked = state.config.voiceEnabled; $('likesEnabled').checked = state.config.participation.likesEnabled; }
+function fillSettings() { renderMusicOptions(); for (const key of ['sceneTitle', 'musicFile', 'queueLimit', 'commentCooldownSec']) $(key).value = state.config[key] ?? ''; for (const key of ['volume','musicVolume','voiceVolume']) { $(key).value = Math.round(state.config[key] * 100); showAudioPercent(key); } for (const kind of ['like', 'follow', 'share']) $('social-' + kind).checked = state.config.social[kind]; $('voiceEnabled').checked = state.config.voiceEnabled; $('likesEnabled').checked = state.config.participation.likesEnabled; }
 for (const key of ['volume','musicVolume','voiceVolume']) {
   $(key).oninput = () => showAudioPercent(key);
   $(key).onchange = () => attempt(async () => { await api('config', { ...state.config, [key]: Number($(key).value) / 100 }, 'PUT'); feedback(`Đã đặt ${key === 'musicVolume' ? 'nhạc' : key === 'voiceVolume' ? 'giọng đọc' : 'hiệu ứng'} ${$(key).value}%.`); });
@@ -217,6 +299,79 @@ $('btnAdminComedy')?.addEventListener('click', () => attempt(async () => {
 $('btnAdminLegend')?.addEventListener('click', () => attempt(async () => {
   await api('viral/legend/proclaim', {});
   feedback('🏛️ Đã mời huyền thoại trader lên phát biểu.');
+}));
+
+$('btnAdminBut')?.addEventListener('click', () => attempt(async () => {
+  const res = await api('viral/but/trigger', {});
+  const msg = `🧙 Ông Bụt: "${res.text}"`;
+  feedback(msg);
+  if ($('adminButFeedback')) $('adminButFeedback').textContent = msg;
+}));
+
+function renderAutoFeatures(autoFeatures = {}) {
+  const grid = $('autoFeatureGrid');
+  if (!grid) return;
+  if (!grid.children.length) {
+    grid.innerHTML = AUTO_FEATURE_META.map(({ key, label }) => `
+      <label class="auto-feature-item" data-auto-card="${escape(key)}">
+        <span class="grow">${escape(label)}</span>
+        <span class="auto-feature-state" data-auto-state="${escape(key)}">BẬT</span>
+        <input type="checkbox" data-auto-feature="${escape(key)}" checked>
+      </label>
+    `).join('');
+  }
+  let enabledCount = 0;
+  for (const { key } of AUTO_FEATURE_META) {
+    const on = autoFeatures?.[key] !== false;
+    if (on) enabledCount++;
+    const cb = grid.querySelector(`[data-auto-feature="${key}"]`);
+    const card = grid.querySelector(`[data-auto-card="${key}"]`);
+    const tagEl = grid.querySelector(`[data-auto-state="${key}"]`);
+    if (cb && cb.checked !== on) cb.checked = on;
+    if (card) card.classList.toggle('off', !on);
+    if (tagEl) tagEl.textContent = on ? 'BẬT' : 'TẮT';
+  }
+  const note = $('autoFeatureFeedback');
+  if (note && !note.dataset.custom) {
+    note.textContent = `Đang bật tự động ${enabledCount}/${AUTO_FEATURE_META.length} chức năng (chức năng tắt vẫn bấm tay bình thường).`;
+  }
+}
+
+async function saveAutoFeatures(nextAuto, msg) {
+  await api('config', { ...state.config, autoFeatures: nextAuto }, 'PUT');
+  feedback(msg);
+  const note = $('autoFeatureFeedback');
+  if (note) {
+    note.dataset.custom = '1';
+    note.textContent = msg;
+    clearTimeout(note._t);
+    note._t = setTimeout(() => { delete note.dataset.custom; renderAutoFeatures(nextAuto); }, 4000);
+  }
+}
+
+$('autoFeatureGrid')?.addEventListener('change', e => {
+  const cb = e.target.closest('[data-auto-feature]');
+  if (!cb || !state?.config) return;
+  const key = cb.dataset.autoFeature;
+  const meta = AUTO_FEATURE_META.find(m => m.key === key);
+  const nextAuto = { ...(state.config.autoFeatures || {}), [key]: cb.checked };
+  renderAutoFeatures(nextAuto);
+  attempt(() => saveAutoFeatures(
+    nextAuto,
+    `${meta?.label || key}: ${cb.checked ? 'ĐÃ BẬT tự động chạy nền' : 'ĐÃ TẮT tự động (vẫn chạy khi bấm nút)'}.`
+  ));
+});
+
+$('btnAutoAllOn')?.addEventListener('click', () => state?.config && attempt(async () => {
+  const nextAuto = Object.fromEntries(AUTO_FEATURE_KEYS.map(k => [k, true]));
+  renderAutoFeatures(nextAuto);
+  await saveAutoFeatures(nextAuto, '✅ Đã BẬT tự động tất cả chức năng chạy nền.');
+}));
+
+$('btnAutoAllOff')?.addEventListener('click', () => state?.config && attempt(async () => {
+  const nextAuto = Object.fromEntries(AUTO_FEATURE_KEYS.map(k => [k, false]));
+  renderAutoFeatures(nextAuto);
+  await saveAutoFeatures(nextAuto, '⏸️ Đã TẮT tất cả chức năng tự động chạy nền (chỉ chạy khi bạn bấm nút).');
 }));
 
 function renderAdminTug(tug) {

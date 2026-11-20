@@ -16,6 +16,25 @@ export const GIFT_TIERS = Object.freeze([
 ]);
 export const giftTier = coins => GIFT_TIERS.findLast(tier => coins >= tier.min);
 
+export const AUTO_FEATURE_META = Object.freeze([
+  { key: 'comedy', label: '🎬 Tiểu phẩm hài tự động' },
+  { key: 'legend', label: '🏛️ Huyền thoại phát biểu tự động' },
+  { key: 'but', label: '🧙 Ông Bụt Hoàn Phí (~10p tự động)' },
+  { key: 'tug', label: '⚔️ Đấu trường Kéo Co tự động' },
+  { key: 'wheel', label: '☸️ Vòng Xoay Định Mệnh tự động' },
+  { key: 'siren', label: '🚨 Còi Quét Thanh Khoản tự động' },
+  { key: 'news', label: '📰 Bản Tin Nóng Phố Wall tự động' },
+  { key: 'rituals', label: '🕯️ Nghi thức mẫu tự động' },
+  { key: 'crowd', label: '👥 Khách & Chat ảo khi rảnh' },
+]);
+export const AUTO_FEATURE_KEYS = Object.freeze(AUTO_FEATURE_META.map(item => item.key));
+export const DEFAULT_AUTO_FEATURES = Object.freeze(
+  Object.fromEntries(AUTO_FEATURE_KEYS.map(key => [key, key !== 'crowd']))
+);
+export const normalizeAutoFeatures = input => Object.fromEntries(
+  AUTO_FEATURE_KEYS.map(key => [key, key === 'crowd' ? input?.[key] === true : input?.[key] !== false])
+);
+
 // Rank proceeds from the aisle outwards, alternating left and right.
 export const HALL_LAYOUT = Object.freeze(Array.from({ length: VISIBLE_HALL_CAPACITY }, (_, index) => {
   const front = index < 4, offset = front ? index : index - 4;

@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { LiveEngine, normalizeEvent, validateConfig } from '../src/core.js';
-import { enrichGiftPayload } from '../src/tiktok.js';
+import { enrichGiftPayload, parseTikTokSessionLine, TikTokSource } from '../src/tiktok.js';
 import { JsonStore } from '../src/store.js';
 const defaults = JSON.parse(fs.readFileSync(new URL('../config/default.json', import.meta.url)));
 const engine = () => new LiveEngine(defaults);
@@ -109,4 +109,43 @@ test('enrichGiftPayload recovers missing diamondCount from learned gift catalog'
   assert.equal(normalized.coins, 5);
   assert.equal(normalized.giftName, 'Hoa Sen');
   assert.equal(normalized.quantity, 2);
+});
+test('parseTikTokSessionLine parses pipe-delimited session and TikTokSource rotates failover accounts', () => {
+  const s1 = parseTikTokSessionLine('test_trader_1|pass|a@example.com|epass|tok|cid|sessionid=11111111111111111111111111111111; tt-target-idc=alisg; multi_sids=7000000000000000001%3A11111111111111111111111111111111|rec@example.com');
+  const s2 = parseTikTokSessionLine('test_trader_2|pass|b@example.com|epass|tok|cid|sessionid=22222222222222222222222222222222; tt-target-idc=alisg; multi_sids=7000000000000000002%3A22222222222222222222222222222222|rec2@example.com');
+  assert.equal(s1.username, 'test_trader_1');
+  assert.equal(s1.sessionId, '11111111111111111111111111111111');
+  assert.equal(s1.ttTargetIdc, 'alisg');
+  assert.equal(s1.userId, '7000000000000000001');
+  assert.equal(s2.username, 'test_trader_2');
+  assert.equal(s2.sessionId, '22222222222222222222222222222222');
+
+  const src = new TikTokSource(engine(), () => {}, { mode: 'auto', accounts: [s1, s2] });
+  assert.equal(src.pickSession(0).username, 'test_trader_1');
+  assert.equal(src.pickSession(1).username, 'test_trader_2');
+  assert.equal(src.pickSession(2).username, 'test_trader_1');
+  src.setSessionConfig({ mode: 'test_trader_2', accounts: [s1, s2] });
+  assert.equal(src.pickSession(0).username, 'test_trader_2');
+  src.setSessionConfig({ mode: 'none', accounts: [s1, s2] });
+  assert.equal(src.pickSession(0), null);
+});
+test('validateConfig strips legacy butPhone so phone numbers never appear on TikTok overlay', () => {
+  assert.equal('butPhone' in validateConfig(defaults), false);
+  assert.equal('butPhone' in validateConfig({ ...defaults, butPhone: '0866.206.535' }), false);
+});
+test('validateConfig normalizes per-feature autoFeatures ON/OFF toggles', () => {
+  const normalized = validateConfig(defaults);
+  assert.equal(normalized.autoFeatures.comedy, true);
+  assert.equal(normalized.autoFeatures.but, true);
+  assert.equal(normalized.autoFeatures.crowd, false);
+
+  const partial = validateConfig({
+    ...defaults,
+    autoFeatures: { comedy: false, but: false, crowd: true, unknownKey: false }
+  });
+  assert.equal(partial.autoFeatures.comedy, false);
+  assert.equal(partial.autoFeatures.but, false);
+  assert.equal(partial.autoFeatures.crowd, true);
+  assert.equal(partial.autoFeatures.legend, true);
+  assert.equal('unknownKey' in partial.autoFeatures, false);
 });
